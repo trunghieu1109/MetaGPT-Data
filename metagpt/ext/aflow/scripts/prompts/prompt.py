@@ -87,3 +87,32 @@ feedback: {feedback}
 
 Ensure the output code is self-contained, and without any additional text or test cases.
 """
+
+DEBATER_PROMPT = """
+Given a problem and many proposed solutions from other debaters for this problem, your task is to debate the solutions, extract the insights and find the weakness in these solutions. 
+Then return the synthesized final conclusion after debating and reasoning comparison.
+
+Problem: {problem}
+
+Proposed Solution from other debaters: {proposed_solutions}
+
+Ensure your solution is the most concise and clear, which is synthesized from the insights of proposed solutions.
+"""
+
+JUDGE_PROMPT = """
+You are the JUDGE in a reasoning competition. Your task is to **evaluate multiple proposed solutions** for a given problem and determine which one is the most **accurate, logical, and well-reasoned**.
+
+Problem: {problem}
+
+Proposed Solutions: {solutions}
+
+For your judgment:
+1. Analyze the correctness, clarity, and completeness of each solution.
+2. Identify any logical gaps, false assumptions, or unnecessary complexity.
+3. Compare all solutions fairly and reason which one aligns best with sound mathematical or logical principles.
+4. Finally, provide:
+   - A brief justification of your decision.
+   - The index or content of the **best solution**.
+
+Your response should be objective, concise, and based solely on reasoning quality and factual correctness.
+"""

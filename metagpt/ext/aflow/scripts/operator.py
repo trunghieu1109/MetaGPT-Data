@@ -23,6 +23,8 @@ from metagpt.ext.aflow.scripts.operator_an import (
     ReviewOp,
     ReviseOp,
     ScEnsembleOp,
+    DebaterOp,
+    JudgeOp
 )
 from metagpt.ext.aflow.scripts.prompts.prompt import (
     ANSWER_GENERATION_PROMPT,
@@ -33,6 +35,8 @@ from metagpt.ext.aflow.scripts.prompts.prompt import (
     REVIEW_PROMPT,
     REVISE_PROMPT,
     SC_ENSEMBLE_PROMPT,
+    DEBATER_PROMPT,
+    JUDGE_PROMPT
 )
 from metagpt.ext.aflow.scripts.utils import (
     extract_test_cases_from_jsonl,
@@ -358,3 +362,21 @@ class MdEnsemble(Operator):
         most_frequent_index = Counter(all_responses).most_common(1)[0][0]
         final_answer = solutions[most_frequent_index]
         return {"solution": final_answer}
+
+class Debater(Operator):
+    def __init__(self, llm: LLM, name: str = "Debater"):
+        super().__init__(llm, name)
+        
+    async def __call__(self, problem, proposed_solutions):
+        prompt = DEBATER_PROMPT.format(problem=problem, proposed_solutions=proposed_solutions)
+        response = await self._fill_node(DebaterOp, prompt, mode="xml_fill")
+        return response
+
+class Judge(Operator):
+    def __init__(self, llm: LLM, name: str = "Judge"):
+        super().__init__(llm, name)
+        
+    async def __call__(self, problem, solutions):
+        prompt = JUDGE_PROMPT.format(problem=problem, solutions=solutions)
+        response = await self._fill_node(JudgeOp, prompt, mode="xml_fill")
+        return response

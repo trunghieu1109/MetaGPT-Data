@@ -597,7 +597,7 @@ class ActionNode:
     async def fill(
         self,
         *,
-        req,
+        context,
         llm,
         schema="json",
         mode="auto",
@@ -628,7 +628,7 @@ class ActionNode:
         :return: self
         """
         self.set_llm(llm)
-        self.set_context(req)
+        self.set_context(context)
         if self.schema:
             schema = self.schema
 
