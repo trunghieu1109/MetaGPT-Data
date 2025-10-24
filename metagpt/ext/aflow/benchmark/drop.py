@@ -52,13 +52,13 @@ class DROPBenchmark(BaseBenchmark):
     async def _generate_output(self, graph, input_text):
         return await graph(input_text)
 
-    async def evaluate_problem(self, problem: dict, graph: Callable) -> Tuple[str, str, str, float, float]:
+    async def evaluate_problem(self, problem: dict, graph: Callable) -> Tuple[str, str, str, float]:
         input_text = problem["context"]
         expected_output = problem["ref_text"]
         answers = expected_output.split("|")
 
         try:
-            output, cost = await self._generate_output(graph, input_text)
+            output, logs = await self._generate_output(graph, input_text)
             f1_scores = []
 
             for answer in answers:
@@ -73,11 +73,11 @@ class DROPBenchmark(BaseBenchmark):
             if uni_score < 0.3:
                 self.log_mismatch(input_text, expected_output, output, output)
 
-            return input_text, output, expected_output, uni_score, cost
+            return input_text, output, expected_output, uni_score, logs
 
         except Exception as e:
             logger.info(f"Maximum retries reached. Skipping this sample. Error: {e}")
-            return input_text, str(e), expected_output, 0.0, 0.0
+            return input_text, str(e), expected_output, 0.0, f"Error: {e}"
 
     def get_result_columns(self) -> List[str]:
-        return ["inputs", "prediction", "expected_output", "score", "cost"]
+        return ["inputs", "prediction", "expected_output", "score", "execution_logs"]

@@ -110,12 +110,12 @@ class MATHBenchmark(BaseBenchmark):
     async def _generate_output(self, graph, input_text):
         return await graph(input_text)
 
-    async def evaluate_problem(self, problem: dict, graph: Callable) -> Tuple[str, str, str, int, float]:
+    async def evaluate_problem(self, problem: dict, graph: Callable) -> Tuple[str, str, str, int]:
         input_text = problem["problem"]
         expected_output = problem["solution"]
 
         try:
-            output, cost = await self._generate_output(graph, input_text)
+            output, logs = await self._generate_output(graph, input_text)
             uni_score, extracted_output = self.calculate_score(expected_output, output)
 
             if uni_score == 0:
@@ -127,11 +127,11 @@ class MATHBenchmark(BaseBenchmark):
                     extract_answer_code=self.get_function_code(self.extract_model_answer),
                 )
 
-            return input_text, output, expected_output, uni_score, cost
+            return input_text, output, expected_output, uni_score, logs
 
         except Exception as e:
             logger.info(f"Maximum retries reached. Skipping this sample. Error: {e}")
-            return input_text, str(e), expected_output, 0.0, 0.0
+            return input_text, str(e), expected_output, 0.0, f"Error: {e}"
 
     def get_result_columns(self) -> List[str]:
-        return ["question", "prediction", "expected_output", "score", "cost"]
+        return ["question", "prediction", "expected_output", "score", "execution_logs"]

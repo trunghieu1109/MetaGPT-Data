@@ -6,6 +6,7 @@ import asyncio
 import concurrent.futures
 import random
 import sys
+import json
 import traceback
 from collections import Counter
 from typing import Dict, List, Tuple
@@ -50,18 +51,37 @@ class Operator:
     def __init__(self, llm: LLM, name: str):
         self.name = name
         self.llm = llm
+        self.invoking_idx = 0
 
     def __call__(self, *args, **kwargs):
         raise NotImplementedError
 
     async def _fill_node(self, op_class, prompt, mode=None, **extra_kwargs):
+        self.invoking_idx += 1
         fill_kwargs = {"context": prompt, "llm": self.llm}
         if mode:
             fill_kwargs["mode"] = mode
         fill_kwargs.update(extra_kwargs)
-        node = await ActionNode.from_pydantic(op_class).fill(**fill_kwargs)
-        return node.instruct_content.model_dump()
-
+        is_retry = True
+        max_retries = 1
+        retries = 0
+        reasoning = ""
+        
+        # log input
+        while is_retry and retries < max_retries:
+            try:
+                node = await ActionNode.from_pydantic(op_class).fill(**fill_kwargs)
+                reasoning = node.reasoning
+                final_node = node.instruct_content.model_dump()
+                is_retry = False
+            except Exception as e:
+                logger.error(traceback.format_exc())
+                final_node = {"error": str(e)}
+                retries += 1
+        return final_node, reasoning
+    
+    async def get_op_name(self):
+        return f"{self.name}_{self.invoking_idx}"
 
 class Custom(Operator):
     def __init__(self, llm: LLM, name: str = "Custom"):
@@ -69,8 +89,17 @@ class Custom(Operator):
 
     async def __call__(self, input, instruction):
         prompt = instruction + input
-        response = await self._fill_node(GenerateOp, prompt, mode="single_fill")
-        return response
+        response, reasoning = await self._fill_node(GenerateOp, prompt, mode="single_fill")
+        
+        logs = {
+            'prompt': prompt,
+            'role': self.name,
+            'invoker_name': await self.get_op_name(),
+            'output': response,
+            'reasoning': reasoning
+        }
+        
+        return response, logs
 
 
 class AnswerGenerate(Operator):
@@ -79,8 +108,17 @@ class AnswerGenerate(Operator):
 
     async def __call__(self, input: str, mode: str = None) -> Tuple[str, str]:
         prompt = ANSWER_GENERATION_PROMPT.format(input=input)
-        response = await self._fill_node(AnswerGenerateOp, prompt, mode="xml_fill")
-        return response
+        response, reasoning = await self._fill_node(AnswerGenerateOp, prompt, mode="xml_fill")
+        
+        logs = {
+            'prompt': prompt,
+            'role': self.name,
+            'invoker_name': await self.get_op_name(),
+            'output': response,
+            'reasoning': reasoning
+        }
+        
+        return response, logs
 
 
 class CustomCodeGenerate(Operator):
@@ -89,8 +127,17 @@ class CustomCodeGenerate(Operator):
 
     async def __call__(self, problem, entry_point, instruction):
         prompt = instruction + problem
-        response = await self._fill_node(GenerateOp, prompt, mode="code_fill", function_name=entry_point)
-        return response
+        response, reasoning = await self._fill_node(GenerateOp, prompt, mode="code_fill", function_name=entry_point)
+        
+        logs = {
+            'prompt': prompt + f"\n\nEntry_point: {entry_point}",
+            'role': self.name,
+            'invoker_name': await self.get_op_name(),
+            'output': response,
+            'reasoning': reasoning
+        }
+        
+        return response, logs
 
 
 class ScEnsemble(Operator):
@@ -105,19 +152,22 @@ class ScEnsemble(Operator):
         super().__init__(llm, name)
 
     async def __call__(self, solutions: List[str], problem: str):
-        answer_mapping = {}
         solution_text = ""
         for index, solution in enumerate(solutions):
-            answer_mapping[chr(65 + index)] = index
-            solution_text += f"{chr(65 + index)}: \n{str(solution)}\n\n\n"
+            solution_text += f"Solution from Expert {chr(65 + index)}: \n{str(solution)}\n\n\n"
 
         prompt = SC_ENSEMBLE_PROMPT.format(question=problem, solutions=solution_text)
-        response = await self._fill_node(ScEnsembleOp, prompt, mode="xml_fill")
+        response, reasoning = await self._fill_node(ScEnsembleOp, prompt, mode="xml_fill")
+        
+        logs = {
+            'prompt': prompt,
+            'role': self.name,
+            'invoker_name': await self.get_op_name(),
+            'output': response,
+            'reasoning': reasoning
+        }
 
-        answer = response.get("solution_letter", "")
-        answer = answer.strip().upper()
-
-        return {"response": solutions[answer_mapping[answer]]}
+        return response, logs
 
 
 def run_code(code):
@@ -190,8 +240,8 @@ class Programmer(Operator):
         Asynchronous method to generate code.
         """
         prompt = PYTHON_CODE_VERIFIER_PROMPT.format(problem=problem, analysis=analysis, feedback=feedback)
-        response = await self._fill_node(CodeGenerateOp, prompt, mode, function_name="solve")
-        return response
+        response, reasoning = await self._fill_node(CodeGenerateOp, prompt, mode, function_name="solve")
+        return prompt, response, reasoning
 
     @retry(stop=stop_after_attempt(3), wait=wait_fixed(2))
     async def __call__(self, problem: str, analysis: str = "None"):
@@ -201,21 +251,59 @@ class Programmer(Operator):
         code = None
         output = None
         feedback = ""
+        
+        logs = []
+        
         for i in range(3):
-            code_response = await self.code_generate(problem, analysis, feedback, mode="code_fill")
+            code_prompt, code_response, code_reasoning = await self.code_generate(problem, analysis, feedback, mode="code_fill")
             code = code_response.get("code")
             if not code:
-                return {"code": code, "output": "No code generated"}
+                logs.append({
+                    'prompt': code_prompt,
+                    'role': self.name,
+                    'invoker_name': await self.get_op_name(),
+                    'output': {
+                        'code': code,
+                        'status': "Error",
+                        'output': "No code generated"
+                    },
+                    'reasoning': code_reasoning
+                })
+                return {"code": code, "output": "No code generated"}, logs
             status, output = await self.exec_code(code)
             if status == "Success":
-                return {"code": code, "output": output}
+                logs.append({
+                    'prompt': code_prompt,
+                    'role': self.name,
+                    'invoker_name': await self.get_op_name(),
+                    'output': {
+                        'code': code,
+                        'status': status,
+                        'output': output
+                    },
+                    'reasoning': code_reasoning
+                })
+                return {"code": code, "output": output}, logs
             else:
                 logger.info(f"Execution error on attempt {i + 1}, error message: {output}")
                 feedback = (
                     f"\nThe result of the error from the code you wrote in the previous round:\n"
                     f"Code: {code}\n\nStatus: {status}, {output}"
                 )
-        return {"code": code, "output": output}
+                
+                logs.append({
+                    'prompt': code_prompt,
+                    'role': self.name,
+                    'invoker_name': await self.get_op_name(),
+                    'output': {
+                        'code': code,
+                        'status': status,
+                        'output': output
+                    },
+                    'reasoning': code_reasoning
+                })
+                
+        return {"code": code, "output": output}, logs
 
 
 class Test(Operator):
@@ -297,8 +385,17 @@ class Format(Operator):
 
     async def __call__(self, problem, solution, mode: str = None):
         prompt = FORMAT_PROMPT.format(problem_description=problem, solution=solution)
-        response = await self._fill_node(FormatOp, prompt, mode)
-        return response
+        response, reasoning = await self._fill_node(FormatOp, prompt, mode="xml_fill")
+        
+        logs = {
+            'prompt': prompt,
+            'role': self.name,
+            'invoker_name': await self.get_op_name(),
+            'output': response,
+            'reasoning': reasoning
+        }
+        
+        return response, logs
 
 
 class Review(Operator):
@@ -307,8 +404,17 @@ class Review(Operator):
 
     async def __call__(self, problem, solution, mode: str = None):
         prompt = REVIEW_PROMPT.format(problem=problem, solution=solution)
-        response = await self._fill_node(ReviewOp, prompt, mode="xml_fill")
-        return response
+        response, reasoning = await self._fill_node(ReviewOp, prompt, mode="xml_fill")
+        
+        logs = {
+            'prompt': prompt,
+            'role': self.name,
+            'invoker_name': await self.get_op_name(),
+            'output': response,
+            'reasoning': reasoning
+        }
+        
+        return response, logs
 
 
 class Revise(Operator):
@@ -317,8 +423,17 @@ class Revise(Operator):
 
     async def __call__(self, problem, solution, feedback, mode: str = None):
         prompt = REVISE_PROMPT.format(problem=problem, solution=solution, feedback=feedback)
-        response = await self._fill_node(ReviseOp, prompt, mode="xml_fill")
-        return response
+        response, reasoning = await self._fill_node(ReviseOp, prompt, mode="xml_fill")
+        
+        logs = {
+            'prompt': prompt,
+            'role': self.name,
+            'invoker_name': await self.get_op_name(),
+            'output': response,
+            'reasoning': reasoning
+        }
+        
+        return response, logs
 
 
 class MdEnsemble(Operator):
@@ -369,8 +484,17 @@ class Debater(Operator):
         
     async def __call__(self, problem, proposed_solutions):
         prompt = DEBATER_PROMPT.format(problem=problem, proposed_solutions=proposed_solutions)
-        response = await self._fill_node(DebaterOp, prompt, mode="xml_fill")
-        return response
+        response, reasoning = await self._fill_node(DebaterOp, prompt, mode="xml_fill")
+        
+        logs = {
+            'prompt': prompt,
+            'role': self.name,
+            'invoker_name': await self.get_op_name(),
+            'output': response,
+            'reasoning': reasoning
+        }
+        
+        return response, logs
 
 class Judge(Operator):
     def __init__(self, llm: LLM, name: str = "Judge"):
@@ -378,5 +502,14 @@ class Judge(Operator):
         
     async def __call__(self, problem, solutions):
         prompt = JUDGE_PROMPT.format(problem=problem, solutions=solutions)
-        response = await self._fill_node(JudgeOp, prompt, mode="xml_fill")
-        return response
+        response, reasoning = await self._fill_node(JudgeOp, prompt, mode="xml_fill")
+        
+        logs = {
+            'prompt': prompt,
+            'role': self.name,
+            'invoker_name': await self.get_op_name(),
+            'output': response,
+            'reasoning': reasoning
+        }
+
+        return response, logs

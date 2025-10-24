@@ -35,23 +35,23 @@ class GSM8KBenchmark(BaseBenchmark):
     async def _generate_output(self, graph, input_text):
         return await graph(input_text)
 
-    async def evaluate_problem(self, problem: dict, graph: Callable) -> Tuple[str, str, float, float, float]:
+    async def evaluate_problem(self, problem: dict, graph: Callable) -> Tuple[str, str, float, float]:
         input_text = problem["question"]
         expected_output = self.extract_number(problem["answer"])
 
         try:
-            output, cost = await self._generate_output(graph, input_text)
+            output, logs = await self._generate_output(graph, input_text)
             predicted_number = self.extract_number(output)
             score, extracted_output = self.calculate_score(expected_output, predicted_number)
 
             if score == 0:
                 self.log_mismatch(input_text, expected_output, output, extracted_output)
 
-            return input_text, output, expected_output, score, cost
+            return input_text, output, expected_output, score, logs
 
         except Exception as e:
             logger.info(f"Maximum retries reached. Skipping this sample. Error: {e}")
-            return input_text, str(e), expected_output, 0.0, 0.0
+            return input_text, str(e), expected_output, 0.0, f"Error: {e}"
 
     def get_result_columns(self) -> List[str]:
-        return ["question", "prediction", "expected_output", "score", "cost"]
+        return ["question", "prediction", "expected_output", "score", "execution_logs"]

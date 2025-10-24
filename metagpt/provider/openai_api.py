@@ -143,7 +143,8 @@ class OpenAILLM(BaseLLM):
             # "stop": None,  # default it's None and gpt4-v can't have this one
             "temperature": self.config.temperature,
             "model": self.model,
-            "timeout": self.get_timeout(timeout),
+            "timeout": 600,
+            "stop": []
         }
         if "o1-" in self.model:
             # compatible to openai o1-series
@@ -156,6 +157,7 @@ class OpenAILLM(BaseLLM):
     async def _achat_completion(self, messages: list[dict], timeout=USE_CONFIG_TIMEOUT) -> ChatCompletion:
         kwargs = self._cons_kwargs(messages, timeout=self.get_timeout(timeout))
         rsp: ChatCompletion = await self.aclient.chat.completions.create(**kwargs)
+        
         self._update_costs(rsp.usage)
         return rsp
 
@@ -173,7 +175,6 @@ class OpenAILLM(BaseLLM):
         """when streaming, print each token in place."""
         if stream:
             return await self._achat_completion_stream(messages, timeout=timeout)
-
         rsp = await self._achat_completion(messages, timeout=self.get_timeout(timeout))
         return self.get_choice_text(rsp)
 
@@ -183,6 +184,7 @@ class OpenAILLM(BaseLLM):
         messages = self.format_msg(messages)
         kwargs = self._cons_kwargs(messages=messages, timeout=self.get_timeout(timeout), **chat_configs)
         rsp: ChatCompletion = await self.aclient.chat.completions.create(**kwargs)
+        
         self._update_costs(rsp.usage)
         return rsp
 
@@ -264,7 +266,9 @@ class OpenAILLM(BaseLLM):
 
     def get_choice_text(self, rsp: ChatCompletion) -> str:
         """Required to provide the first text of choice"""
-        return rsp.choices[0].message.content if rsp.choices else ""
+        if rsp.choices:
+            return rsp.choices[0].message.content, rsp.choices[0].message.reasoning_content
+        return "", ""
 
     def _calc_usage(self, messages: list[dict], rsp: str) -> CompletionUsage:
         usage = CompletionUsage(prompt_tokens=0, completion_tokens=0, total_tokens=0)

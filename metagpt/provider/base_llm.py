@@ -9,6 +9,7 @@
 from __future__ import annotations
 
 import json
+import sys
 from abc import ABC, abstractmethod
 from typing import Optional, Union
 
@@ -205,9 +206,9 @@ class BaseLLM(ABC):
         logger.debug(masked_message)
 
         compressed_message = self.compress_messages(message, compress_type=self.config.compress_type)
-        rsp = await self.acompletion_text(compressed_message, stream=stream, timeout=self.get_timeout(timeout))
+        rsp, reasoning = await self.acompletion_text(compressed_message, stream=False, timeout=self.get_timeout(timeout))
         # rsp = await self.acompletion_text(message, stream=stream, timeout=self.get_timeout(timeout))
-        return rsp
+        return rsp, reasoning
 
     def _extract_assistant_rsp(self, context):
         return "\n".join([i["content"] for i in context if i["role"] == "assistant"])
@@ -218,7 +219,7 @@ class BaseLLM(ABC):
         for msg in msgs:
             umsg = self._user_msg(msg)
             context.append(umsg)
-            rsp_text = await self.acompletion_text(context, timeout=self.get_timeout(timeout))
+            rsp_text, reasoning = await self.acompletion_text(context, timeout=self.get_timeout(timeout))
             context.append(self._assistant_msg(rsp_text))
         return self._extract_assistant_rsp(context)
 

@@ -19,6 +19,7 @@ class BaseBenchmark(ABC):
         self.name = name
         self.file_path = file_path
         self.log_path = log_path
+        self.val_data = None
 
     PASS = "PASS"
     FAIL = "FAIL"
@@ -33,17 +34,24 @@ class BaseBenchmark(ABC):
             return filtered_data
         return data
 
+    async def load_and_save_data(self) -> List[dict]:
+        data = []
+        async with aiofiles.open(self.file_path, mode="r", encoding="utf-8") as file:
+            async for line in file:
+                data.append(json.loads(line))
+        self.val_data = data
+        return data
+
+
     def save_results_to_csv(self, results: List[Tuple[Any, ...]], columns: List[str]):
         df = pd.DataFrame(results, columns=columns)
         avg_score = df["score"].mean()
-        t_cost = df["cost"].max()
-        a_cost = t_cost / len(df) if len(df) > 0 else 0
         current_time = datetime.now().strftime("%Y%m%d_%H%M%S")
         filename = f"{avg_score:.5f}_{current_time}.csv"
         output_file = os.path.join(self.log_path, filename)
         df.to_csv(output_file, index=False)
         logger.info(f"Results saved to {output_file}")
-        return avg_score, a_cost, t_cost
+        return avg_score
 
     def log_mismatch(
         self,
@@ -98,7 +106,6 @@ class BaseBenchmark(ABC):
         data = await self.load_data(va_list)
         results = await self.evaluate_all_problems(data, graph, max_concurrent_tasks)
         columns = self.get_result_columns()
-        average_score, average_cost, total_cost = self.save_results_to_csv(results, columns)
+        average_score = self.save_results_to_csv(results, columns)
         logger.info(f"Average score on {self.name} dataset: {average_score:.5f}")
-        logger.info(f"Total Cost: {total_cost:.5f}")
-        return average_score, average_cost, total_cost
+        return average_score

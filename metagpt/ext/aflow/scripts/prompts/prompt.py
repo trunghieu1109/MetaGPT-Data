@@ -8,12 +8,23 @@ Think step by step and solve the problem.
 1. In the "thought" field, explain your thinking process in detail.
 2. In the "answer" field, provide the final answer concisely and clearly. The answer should be a direct response to the question, without including explanations or reasoning.
 Your task: {input}
+
+The output must be in complete XML format:
+{{
+   'thought': ...,
+   'answer': ...
+}}
 """
 
 FORMAT_PROMPT = """
 For the question described as {problem_description},
 please extract a short and concise answer contains only one word/few words from the following solution: {solution}.
 Make sure there are no additional comments or explanations in your response.
+
+The output must be in complete XML format:
+<solution>
+...
+</solution>
 """
 
 SC_ENSEMBLE_PROMPT = """
@@ -23,7 +34,14 @@ Several solutions have been generated to address the given question. They are as
 
 Carefully evaluate these solutions and identify the answer that appears most frequently across them. This consistency in answers is crucial for determining the most reliable solution.
 
-In the "thought" field, provide a detailed explanation of your thought process. In the "solution_letter" field, output only the single letter ID (A, B, C, etc.) corresponding to the most consistent solution. Do not include any additional text or explanation in the "solution_letter" field.
+In the "thought" field, provide a detailed explanation of your thought process. In `sc_solution`, return the most consistent answer.
+The output must be in complete XML format:
+<thought>
+...
+</thought>
+<sc_solution>
+...
+</sc_solution>
 """
 
 PYTHON_CODE_VERIFIER_PROMPT = """
@@ -40,7 +58,6 @@ Your code should:
 
 Please ensure your code is efficient, well-commented, and follows Python best practices. The output should be limited to basic data types such as strings, integers, and floats. It is prohibited to transmit images or other file formats. The code output is intended for a text-based language model.
 """
-
 
 REFLECTION_ON_PUBLIC_TEST_PROMPT = """
 Given a code problem and a python code solution which failed to pass test or execute, you need to analyze the reason for the failure and propose a better code solution.: 
@@ -76,6 +93,13 @@ problem: {problem}
 solution: {solution}
 
 If you are more than 95 percent confident that the final answer is incorrect, please return False and give a feedback for the error. Otherwise, please return True and give a explanation for the correctness.
+The output must be in complete XML format:
+<review_result>
+...
+</review_result>
+<feedback>
+...
+</feedback>
 """
 
 REVISE_PROMPT = """
@@ -86,6 +110,10 @@ solution: {solution}
 feedback: {feedback}
 
 Ensure the output code is self-contained, and without any additional text or test cases.
+The output must be in complete XML format:
+<solution>
+...
+</solution>
 """
 
 DEBATER_PROMPT = """
@@ -97,6 +125,13 @@ Problem: {problem}
 Proposed Solution from other debaters: {proposed_solutions}
 
 Ensure your solution is the most concise and clear, which is synthesized from the insights of proposed solutions.
+The output must be in complete XML format:
+<feedback>
+...
+</feedback>
+<solution>
+...
+</solution>
 """
 
 JUDGE_PROMPT = """
@@ -115,4 +150,11 @@ For your judgment:
    - The index or content of the **best solution**.
 
 Your response should be objective, concise, and based solely on reasoning quality and factual correctness.
+The output must be in complete XML format:
+<justification>
+...
+</justification>
+<best_solution>
+...
+</best_solution>
 """

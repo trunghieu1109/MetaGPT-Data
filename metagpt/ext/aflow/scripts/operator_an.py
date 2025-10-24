@@ -60,3 +60,9 @@ class DebaterOp(BaseModel):
 class JudgeOp(BaseModel):
     justification: str = Field(default="", description="The justification for your decision")
     best_solution: str = Field(default="", description="The final decision after judging the proposed solutions")
+
+class GeneratePlanOp(BaseModel):
+    detailed_plan: str = Field(default="", description="The detailed plan generated in JSON format, exactly max_scenario_len steps")
+
+class GenerateMASOp(BaseModel):
+    mas_code: str = Field(default="", description="The executable Python code for this problem")

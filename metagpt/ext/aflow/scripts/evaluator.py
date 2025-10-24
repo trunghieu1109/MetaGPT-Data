@@ -56,6 +56,7 @@ class Evaluator:
         # For example: set LLM configuration, dataset configuration, etc.
         dataset_config = params.get("dataset", {})
         llm_config = params.get("llm_config", {})
+        print(llm_config)
         return graph(name=dataset, llm_config=llm_config, dataset=dataset_config)
 
     def _get_data_path(self, dataset: DatasetType, test: bool) -> str:

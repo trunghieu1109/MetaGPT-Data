@@ -139,12 +139,12 @@ async def main():
     # await operator_test.test_answer_generate()
     # await operator_test.test_custom_code_generate()
     # await operator_test.test_sc_ensemble()
-    # await operator_test.test_programmer()
+    await operator_test.test_programmer()
     # await operator_test.test_format()
     # await operator_test.test_review()
     # await operator_test.test_revise()
     # await operator_test.test_debater()
-    await operator_test.test_judge()
+    # await operator_test.test_judge()
         
 if __name__ == '__main__':
     asyncio.run(main())

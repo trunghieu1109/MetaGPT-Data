@@ -107,7 +107,7 @@ class HumanEvalBenchmark(BaseBenchmark):
         # Generate output with a timeout of 60 seconds
         return await asyncio.wait_for(graph(prompt, entry_point), timeout=60)
 
-    async def evaluate_problem(self, data: dict, graph: Callable) -> Tuple[str, str, str, float, float]:
+    async def evaluate_problem(self, data: dict, graph: Callable) -> Tuple[str, str, str, float]:
         input_text = data["prompt"]
         expected_output = (
             "\nCorrect Solution:\ndef "
@@ -119,7 +119,7 @@ class HumanEvalBenchmark(BaseBenchmark):
 
         try:
             # Generate prediction using the graph function
-            prediction, cost = await self._generate_output(graph, input_text, data["entry_point"])
+            prediction, logs = await self._generate_output(graph, input_text, data["entry_point"])
 
             # Check the solution
             ret = self.check_solution(prediction, data["test"], data["entry_point"])
@@ -133,19 +133,19 @@ class HumanEvalBenchmark(BaseBenchmark):
             if score == 0:
                 self.log_mismatch(input_text, expected_output, prediction, score)
 
-            return input_text, prediction, expected_output, score, cost
+            return input_text, prediction, expected_output, score, logs
 
         except asyncio.TimeoutError:
             logger.info("Timeout error. Skipping this sample.")
-            return input_text, "Timeout", expected_output, 0.0, 0.0
+            return input_text, "Timeout", expected_output, 0.0, "Timeout"
 
         except Exception as e:
             logger.info(f"Maximum retries reached. Skipping this sample. Error: {e}")
-            return input_text, str(e), expected_output, 0.0, 0.0
+            return input_text, str(e), expected_output, 0.0, f"Error: {e}"
 
     def calculate_score(self, expected_output: str, prediction: str) -> Tuple[float, str]:
         # The scoring logic for HumanEval is already implemented in evaluate_problem, this is just to conform to the interface
         return 0.0, prediction
 
     def get_result_columns(self) -> List[str]:
-        return ["inputs", "prediction", "expected_output", "score", "cost"]
+        return ["inputs", "prediction", "expected_output", "score", "execution_logs"]

@@ -45,7 +45,7 @@ class HotpotQABenchmark(BaseBenchmark):
     async def _generate_output(self, graph, input_text):
         return await graph(input_text)
 
-    async def evaluate_problem(self, problem: dict, graph: Callable) -> Tuple[str, str, str, str, float, float]:
+    async def evaluate_problem(self, problem: dict, graph: Callable) -> Tuple[str, str, str, str, float]:
         input_text = problem["question"]
         expected_output = problem["answer"]
         paragraphs = [item[1] for item in problem["context"] if isinstance(item[1], list)]
@@ -53,7 +53,7 @@ class HotpotQABenchmark(BaseBenchmark):
         inputs = f"Context: {context_str}\n\nQuestion: {input_text}\n\nAnswer:"
 
         try:
-            output, cost = await self._generate_output(graph, inputs)
+            output, logs = await self._generate_output(graph, inputs)
             score, extracted_output = self.calculate_score(expected_output, output)
 
             if (
@@ -61,11 +61,11 @@ class HotpotQABenchmark(BaseBenchmark):
             ):  # We set the threshold for collecting incorrect questions to 0.3, as F1 Score cannot be simply judged using 0-1
                 self.log_mismatch(input_text, expected_output, output, extracted_output)
 
-            return input_text, context_str, output, expected_output, score, cost
+            return input_text, context_str, output, expected_output, score, logs
 
         except Exception as e:
             logger.info(f"Maximum retries reached. Skipping this sample. Error: {e}")
-            return input_text, context_str, str(e), expected_output, 0.0, 0.0
+            return input_text, context_str, str(e), expected_output, 0.0, f"Error: {e}"
 
     def get_result_columns(self) -> List[str]:
-        return ["question", "context", "prediction", "expected_output", "score", "cost"]
+        return ["question", "context", "prediction", "expected_output", "score", "execution_logs"]

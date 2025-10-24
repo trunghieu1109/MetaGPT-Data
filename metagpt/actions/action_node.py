@@ -155,6 +155,7 @@ class ActionNode:
     content: str
     instruct_content: BaseModel
 
+
     # For ActionGraph
     prevs: List["ActionNode"]  # previous nodes
     nexts: List["ActionNode"]  # next nodes
@@ -178,6 +179,7 @@ class ActionNode:
         self.schema = schema
         self.prevs = []
         self.nexts = []
+        self.reasoning = ""
 
     def __str__(self):
         return (
@@ -538,17 +540,17 @@ class ActionNode:
         """
         field_name = self.get_field_name()
         prompt = context
-        content = await self.llm.aask(prompt, timeout=timeout)
+        content, reasoning = await self.llm.aask(prompt, timeout=timeout)
         extracted_code = sanitize(code=content, entrypoint=function_name)
         result = {field_name: extracted_code}
-        return result
+        return result, reasoning
 
     async def single_fill(self, context: str, images: Optional[Union[str, list[str]]] = None) -> Dict[str, str]:
         field_name = self.get_field_name()
         prompt = context
-        content = await self.llm.aask(prompt, images=images)
+        content, reasoning = await self.llm.aask(prompt, images=images)
         result = {field_name: content}
-        return result
+        return result, reasoning
 
     async def xml_fill(self, context: str, images: Optional[Union[str, list[str]]] = None) -> Dict[str, Any]:
         """
@@ -558,8 +560,8 @@ class ActionNode:
         field_types = self.get_field_types()
 
         extracted_data: Dict[str, Any] = {}
-        content = await self.llm.aask(context, images=images)
-
+        content, reasoning = await self.llm.aask(context, images=images)
+        
         for field_name in field_names:
             pattern = rf"<{field_name}>(.*?)</{field_name}>"
             match = re.search(pattern, content, re.DOTALL)
@@ -591,7 +593,7 @@ class ActionNode:
                     except:
                         extracted_data[field_name] = {}  # 默认空字典
 
-        return extracted_data
+        return extracted_data, reasoning
 
     @exp_cache(serializer=ActionNodeSerializer())
     async def fill(
@@ -633,19 +635,22 @@ class ActionNode:
             schema = self.schema
 
         if mode == FillMode.CODE_FILL.value:
-            result = await self.code_fill(context, function_name, timeout)
+            result, reasoning = await self.code_fill(context, function_name, timeout)
             self.instruct_content = self.create_class()(**result)
+            self.reasoning = reasoning
             return self
 
         elif mode == FillMode.XML_FILL.value:
             context = self.xml_compile(context=self.context)
-            result = await self.xml_fill(context, images=images)
+            result, reasoning = await self.xml_fill(context, images=images)
             self.instruct_content = self.create_class()(**result)
+            self.reasoning = reasoning
             return self
 
         elif mode == FillMode.SINGLE_FILL.value:
-            result = await self.single_fill(context, images=images)
+            result, reasoning = await self.single_fill(context, images=images)
             self.instruct_content = self.create_class()(**result)
+            self.reasoning = reasoning
             return self
 
         if strgy == "simple":

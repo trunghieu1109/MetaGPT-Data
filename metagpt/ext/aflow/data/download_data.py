@@ -77,3 +77,5 @@ def download(required_datasets, if_first_download: bool = True):
             process_dataset(dataset["url"], dataset["filename"], extract_path)
     else:
         logger.info("Skip downloading datasets")
+
+download(['datasets'])
