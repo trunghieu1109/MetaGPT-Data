@@ -93,6 +93,7 @@ problem: {problem}
 solution: {solution}
 
 If you are more than 95 percent confident that the final answer is incorrect, please return False and give a feedback for the error. Otherwise, please return True and give a explanation for the correctness.
+Even if the review_result is true, you can put it 'nothing here' in the feedback.
 The output must be in complete XML format:
 <review_result>
 ...

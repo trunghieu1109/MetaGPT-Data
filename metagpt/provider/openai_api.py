@@ -184,7 +184,6 @@ class OpenAILLM(BaseLLM):
         messages = self.format_msg(messages)
         kwargs = self._cons_kwargs(messages=messages, timeout=self.get_timeout(timeout), **chat_configs)
         rsp: ChatCompletion = await self.aclient.chat.completions.create(**kwargs)
-        
         self._update_costs(rsp.usage)
         return rsp
 

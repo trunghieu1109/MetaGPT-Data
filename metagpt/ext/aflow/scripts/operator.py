@@ -63,7 +63,7 @@ class Operator:
             fill_kwargs["mode"] = mode
         fill_kwargs.update(extra_kwargs)
         is_retry = True
-        max_retries = 1
+        max_retries = 5
         retries = 0
         reasoning = ""
         
@@ -77,7 +77,7 @@ class Operator:
             except Exception as e:
                 logger.error(traceback.format_exc())
                 final_node = {"error": str(e)}
-                retries += 1
+                retries += 1                
         return final_node, reasoning
     
     async def get_op_name(self):
@@ -126,8 +126,9 @@ class CustomCodeGenerate(Operator):
         super().__init__(llm, name)
 
     async def __call__(self, problem, entry_point, instruction):
-        prompt = instruction + problem
-        response, reasoning = await self._fill_node(GenerateOp, prompt, mode="code_fill", function_name=entry_point)
+        prompt = instruction + problem + f"\n\nEntry_point: {entry_point}"
+        
+        response, reasoning = await self._fill_node(CodeGenerateOp, prompt, mode="code_fill", function_name=entry_point)
         
         logs = {
             'prompt': prompt + f"\n\nEntry_point: {entry_point}",
@@ -202,6 +203,7 @@ def run_code(code):
         exec(code, global_namespace)
         # Assume the code defines a function named 'solve'
         if "solve" in global_namespace and callable(global_namespace["solve"]):
+            print("Generated code: ", code)
             result = global_namespace["solve"]()
             return "Success", str(result)
         else:
@@ -312,7 +314,6 @@ class Test(Operator):
 
     def exec_code(self, solution, entry_point):
         test_cases = extract_test_cases_from_jsonl(entry_point)
-
         fail_cases = []
         for test_case in test_cases:
             test_code = test_case_2_test_function(solution, test_case, entry_point)
@@ -348,10 +349,22 @@ class Test(Operator):
         "interface": "test(problem: str, solution: str, entry_point: str) -> str"
         }
         """
+        logs = []
         for _ in range(test_loop):
             result = self.exec_code(solution, entry_point)
             if result == "no error":
-                return {"result": True, "solution": solution}
+                logs.append({
+                    'prompt': "No prompt",
+                    'role': self.name,
+                    'invoker_name': await self.get_op_name(),
+                    'output': {
+                        'result': True,
+                        'solution': solution
+                    },
+                    'reasoning': "No reasoning"
+                })
+                
+                return {"result": True, "solution": solution}, logs
             elif "exec_fail_case" in result:
                 result = result["exec_fail_case"]
                 prompt = REFLECTION_ON_PUBLIC_TEST_PROMPT.format(
@@ -360,8 +373,19 @@ class Test(Operator):
                     exec_pass=f"executed unsuccessfully, error: \n {result}",
                     test_fail="executed unsucessfully",
                 )
-                response = await self._fill_node(ReflectionTestOp, prompt, mode="code_fill")
-                solution = response["reflection_and_solution"]
+                response, reasoning = await self._fill_node(ReflectionTestOp, prompt, mode="code_fill")
+                solution  = response["reflection_and_solution"]
+                logs.append({
+                    'prompt': prompt,
+                    'role': self.name,
+                    'invoker_name': await self.get_op_name(),
+                    'output': {
+                        'result': False,
+                        'reason': f"executed unsuccessfully, error: \n {result}",
+                        'refined_solution': solution
+                    },
+                    'reasoning': reasoning
+                })
             else:
                 prompt = REFLECTION_ON_PUBLIC_TEST_PROMPT.format(
                     problem=problem,
@@ -369,14 +393,45 @@ class Test(Operator):
                     exec_pass="executed successfully",
                     test_fail=result,
                 )
-                response = await self._fill_node(ReflectionTestOp, prompt, mode="code_fill")
+                response, reasoning = await self._fill_node(ReflectionTestOp, prompt, mode="code_fill")
                 solution = response["reflection_and_solution"]
+                logs.append({
+                    'prompt': prompt,
+                    'role': self.name,
+                    'invoker_name': await self.get_op_name(),
+                    'output': {
+                        'result': False,
+                        'reason': f"Test failed: {result}",
+                        'refined_solution': solution
+                    },
+                    'reasoning': reasoning
+                })
 
         result = self.exec_code(solution, entry_point)
         if result == "no error":
-            return {"result": True, "solution": solution}
+            logs.append({
+                'prompt': "No prompt",
+                'role': self.name,
+                'invoker_name': await self.get_op_name(),
+                'output': {
+                    'result': True,
+                    'solution': solution
+                },
+                'reasoning': "No reasoning"
+            })
+            return {"result": True, "solution": solution}, logs
         else:
-            return {"result": False, "solution": solution}
+            logs.append({
+                'prompt': "No prompt",
+                'role': self.name,
+                'invoker_name': await self.get_op_name(),
+                'output': {
+                    'result': False,
+                    'solution': solution
+                },
+                'reasoning': "No reasoning"
+            })
+            return {"result": False, "solution": solution}, logs
 
 
 class Format(Operator):

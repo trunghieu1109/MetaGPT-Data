@@ -80,7 +80,7 @@ class DROPBenchmark(BaseBenchmark):
             return input_text, str(e), expected_output, 0.0, f"Error: {e}"
 
     def get_result_columns(self) -> List[str]:
-        return ["inputs", "prediction", "expected_output", "score", "execution_logs"]
+        return ["task", "output", "expected_output", "score", "execution_logs"]
 
     def get_description(self):
         general_desc = """

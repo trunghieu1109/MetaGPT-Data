@@ -61,14 +61,14 @@ class HotpotQABenchmark(BaseBenchmark):
             ):  # We set the threshold for collecting incorrect questions to 0.3, as F1 Score cannot be simply judged using 0-1
                 self.log_mismatch(input_text, expected_output, output, extracted_output)
 
-            return input_text, context_str, output, expected_output, score, logs
+            return inputs, output, expected_output, score, logs
 
         except Exception as e:
             logger.info(f"Maximum retries reached. Skipping this sample. Error: {e}")
-            return input_text, context_str, str(e), expected_output, 0.0, f"Error: {e}"
+            return inputs, str(e), expected_output, 0.0, f"Error: {e}"
 
     def get_result_columns(self) -> List[str]:
-        return ["question", "context", "prediction", "expected_output", "score", "execution_logs"]
+        return ["task", "output", "expected_output", "score", "execution_logs"]
 
     def get_description(self):
         general_desc = """

@@ -64,6 +64,7 @@ Code requirements:
 - Do not include placeholder text — fill in all necessary fields with meaningful values or contextual data.
 - Add concise docstrings explaining the workflow purpose and flow.
 - All the libraries / frameworks were imported. So you only need to implement the Workflow class.
+- Output of this Workflow must be the final results, not a dict; and the invoking_logs.
 
 Output format:
 Only output the **Python code** of the complete `Workflow` class (or equivalent function).

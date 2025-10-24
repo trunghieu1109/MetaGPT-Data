@@ -104,9 +104,9 @@ class Workflow:
         ....
         self.custom_code_generate = operator.CustomCodeGenerate(self.llm)
 
-    async def __call__(self, problem: str):
+    async def __call__(self, problem: str, entry_point: str):
         # Step x: .....
-        solution, logs = await self.custom_code_generate(problem=problem, entry_point="solve", instruction="")
+        solution, logs = await self.custom_code_generate(problem=problem, entry_point=entry_point, instruction="")
         invoking_logs.append(logs)
         
         step_x_code = solution['code']
@@ -215,7 +215,39 @@ class Workflow:
             'entry_point': 'The name of the function to be executed in the test environment.'
         },
         'interface': 'self.test(problem="", solution="", entry_point="")',
-        'output': "An object containing the test 'result' (True/False) and possibly a revised 'solution'."
+        'output': {
+            'result': {
+                'type': "boolean",
+                'desc': "True if the solution passes all public test cases, False otherwise."
+            },
+            'solution': {
+                'type': "string",
+                'desc': "The revised Python code solution after test execution."
+            }
+        },
+        'example': """
+class Workflow:
+    def __init__(
+        self,
+        ....
+    ) -> None:
+        ....
+        self.custom_code_generate = operator.CustomCodeGenerate(self.llm)
+        self.test = operator.Test(self.llm)
+
+    async def __call__(self, problem: str, entry_point: str):
+        # Step x - 1: .....
+        solution, logs = await self.custom_code_generate(problem=problem, entry_point=entry_point, instruction="")
+        invoking_logs.append(logs)
+        
+        step_x-1_code = solution['code']
+        
+        test_results, logs = await self.test(problem=problem, solution=step_x-1_code, entry_point=entry_point)
+        invoking_logs.append(logs)
+        
+        step_x_result = test_results['result']
+        step_x_solution = test_results['solution']
+        """
     },
     'Format': {
         'description': "Formats a generated solution into a clean and well-presented format (e.g., readable structure, docstring, or comment formatting).",
@@ -468,6 +500,33 @@ class Workflow:
         self.custom = operator.Custom(self.llm)
 
     async def __call__(self, problem: str):
+        """
+        Implementation of the graph
+        """
+        
+        invoking_logs = []
+        
+        solution, log = await self.custom(input=problem, instruction="")
+        invoking_logs.append(log)
+        
+        return solution['response'], invoking_logs
+'''
+
+
+CODING_MAS_TEMPLATE = '''
+class Workflow:
+    def __init__(
+        self,
+        name: str,
+        llm_config,
+        dataset: DatasetType,
+    ) -> None:
+        self.name = name
+        self.dataset = dataset
+        self.llm = create_llm_instance(llm_config)
+        self.custom = operator.Custom(self.llm)
+
+    async def __call__(self, problem: str, entry_point: str):
         """
         Implementation of the graph
         """

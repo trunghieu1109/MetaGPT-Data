@@ -31,14 +31,23 @@ Every morning Aya goes for a $9$-kilometer-long walk and stops at a coffee shop 
     async def test_custom_code_generate(self):
         custom_code_generate_op = operator.CustomCodeGenerate(self.llm)
         problem = """
-Write a function to find the minimum cost path to reach (m, n) from (0, 0) for the given cost matrix cost[][] and a position (m, n) in cost[][].
+from typing import List\n\n\ndef has_close_elements(numbers: List[float], threshold: float) -> bool:\n    \"\"\" Check if in given list of numbers, are any two numbers closer to each other than\n    given threshold.\n    >>> has_close_elements([1.0, 2.0, 3.0], 0.5)\n    False\n    >>> has_close_elements([1.0, 2.8, 3.0, 4.0, 5.0, 2.0], 0.3)\n    True\n    \"\"\"\n
         """
         
-        entry_point = "find_min_path"
+        entry_point = "has_close_elements"
         instruction = "Write the Python code function"
         
-        response = await custom_code_generate_op(problem=problem, entry_point=entry_point, instruction=instruction)
-        print(response)
+        response, reasoning = await custom_code_generate_op(problem=problem, entry_point=entry_point, instruction=instruction)
+        
+        test_op = operator.Test(self.llm)
+        
+        test_results, logs = await test_op(problem=problem, solution=response['code'], entry_point=entry_point)
+        print(test_results['result'])
+        print(test_results['solution'])
+        
+        for log in logs:
+            print("------------------------------------")
+            print(log)
         
     async def test_sc_ensemble(self):
         sc_ensemble_op = operator.ScEnsemble(self.llm)
@@ -137,9 +146,9 @@ async def main():
     operator_test = OperatorTest()
     # await operator_test.test_custom()
     # await operator_test.test_answer_generate()
-    # await operator_test.test_custom_code_generate()
+    await operator_test.test_custom_code_generate()
     # await operator_test.test_sc_ensemble()
-    await operator_test.test_programmer()
+    # await operator_test.test_programmer()
     # await operator_test.test_format()
     # await operator_test.test_review()
     # await operator_test.test_revise()

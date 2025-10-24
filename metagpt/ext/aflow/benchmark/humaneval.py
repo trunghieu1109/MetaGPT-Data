@@ -148,7 +148,7 @@ class HumanEvalBenchmark(BaseBenchmark):
         return 0.0, prediction
 
     def get_result_columns(self) -> List[str]:
-        return ["inputs", "prediction", "expected_output", "score", "execution_logs"]
+        return ["task", "output", "expected_output", "score", "execution_logs"]
 
     def get_description(self):
         general_desc = """

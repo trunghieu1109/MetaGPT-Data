@@ -118,7 +118,7 @@ class MBPPBenchmark(BaseBenchmark):
         return 0.0, prediction
 
     def get_result_columns(self) -> List[str]:
-        return ["inputs", "prediction", "expected_output", "score", "execution_logs"]
+        return ["task", "output", "expected_output", "score", "execution_logs"]
 
     def get_description(self):
         general_desc = """
@@ -130,7 +130,8 @@ The goal is to translate problem descriptions into correct functional code using
         
         sample_data = [f"Prompt: {sample['prompt']}\n\nEntry Point: {sample['entry_point']}\n\n Sample Test: {sample['test']}" for sample in self.val_data[:3]]
         
-        return general_desc + "\n\n" + "\n\n".join(sample_data)
+        # return general_desc + "\n\n" + "\n\n".join(sample_data)
+        return general_desc
         
         
         

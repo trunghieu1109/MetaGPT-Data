@@ -3,6 +3,7 @@ import argparse
 import sys
 import os
 import json
+import pandas as pd
 from typing import Dict, List
 import asyncio
 
@@ -16,7 +17,7 @@ from metagpt.ext.aflow.scripts.operator_an import (
     GenerateMASOp
 )
 
-from meta_constants import OPERATORS_LIST, MAS_TEMPLATE
+from meta_constants import OPERATORS_LIST, MAS_TEMPLATE, CODING_MAS_TEMPLATE
 from prompts.generate_data_prompt import TASK_DECOMPOSER_PROMPT, MAS_CODE_GENERATOR_PROMPT, COMPLETE_MAS_TEMPLATE
 from experiment_config import ExperimentConfig, EXPERIMENT_CONFIGS
 from benchmark_loader import create_benchmark
@@ -88,13 +89,9 @@ class DataGenerator:
     async def _generate_scenario(self):
         # TODO: From the available opearators, generate one scenario that has exactly max_scenario_len steps, and different from the existing scenarios
         return """
-Custom
-for n = 3:
-    AnswerGenerate
-ScEnsemble
-Review
-Revise
-Format
+<start_scenario>
+Custom -> CustomCodeGenerate -> Test -> Review -> Revise
+<end_scenario>
         """
     
     async def generate_all_scenario(self):
@@ -111,7 +108,10 @@ Format
         response = await invoking(GeneratePlanOp, prompt, llm)
         return response['detailed_plan']
     async def _generate_mas(self, scenario: str, plan: dict):
-        prompt = MAS_CODE_GENERATOR_PROMPT.format(template=MAS_TEMPLATE, scenario=scenario, operator_description=self.avail_operators, plan=plan)
+        if self.dataset in ['MBPP', 'HumanEval']:
+            prompt = MAS_CODE_GENERATOR_PROMPT.format(template=CODING_MAS_TEMPLATE, scenario=scenario, operator_description=self.avail_operators, plan=plan)
+        else:
+            prompt = MAS_CODE_GENERATOR_PROMPT.format(template=MAS_TEMPLATE, scenario=scenario, operator_description=self.avail_operators, plan=plan)
         llm = self.gen_llm
         
         # TODO: Generate task decomposition in exactly max_scenario_len steps
@@ -182,6 +182,7 @@ Format
     async def _execute(self, exec_code):
         # TODO: Execute generated mas, log all the information as much as possible
         log_path = os.path.join(self.save_path)
+        new_data_path = os.path.join(self.save_path, "data.jsonl")
         
         # init evaluator
         evaluator = Evaluator(eval_path=log_path)
@@ -199,13 +200,23 @@ Format
             raise
         
         # execute and then evaluate code -> get the logs and labels for each sample
-        score = await evaluator.graph_evaluate(
+        score, output_file = await evaluator.graph_evaluate(
             self.dataset,
             graph_class,
             {"dataset": self.dataset, "llm_config": self.exec_model_config},
             log_path,
             is_test=False,
         )
+        
+        results = pd.read_csv(output_file, encoding="utf-8")
+        results['code'] = ""
+        for idx, row in results.iterrows():
+            results.at[idx, 'code'] = exec_code
+        
+        with open(new_data_path, "w", encoding="utf-8") as f:
+            for _, row in results.iterrows():
+                json_line = json.dumps(row.to_dict(), ensure_ascii=False)
+                f.write(json_line + "\n")
     
     async def generate_sample_data(self):
         await self.generate_all_scenario()
@@ -242,7 +253,7 @@ async def main():
     gen_model = models_config.get("openai/gpt-oss-20b")
     exec_model = models_config.get("openai/gpt-oss-20b")
     
-    n_sample = 3
+    n_sample = 1
     
     for i in range(n_sample):
         generator = DataGenerator(gen_model, exec_model, args.dataset, "examples/generate_sample_data/generated_data", i)
