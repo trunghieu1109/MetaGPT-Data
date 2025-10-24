@@ -55,3 +55,15 @@ class GSM8KBenchmark(BaseBenchmark):
 
     def get_result_columns(self) -> List[str]:
         return ["question", "prediction", "expected_output", "score", "execution_logs"]
+
+    def get_description(self):
+        general_desc = """
+Task: Solve grade school level math word problems with multi-step arithmetic reasoning.
+Input: A math problem described as a word problem in natural language, involving quantities and conditions.
+Output: A final numeric answer derived through reasoning across the problem text.
+The benchmark checks the model’s ability to extract facts, reason logically, and perform calculations.
+        """
+        
+        sample_data = [f"Question: {sample['question']}. Possible Answer: {sample['answer']}" for sample in self.val_data[:3]]
+        
+        return general_desc + "\n\n" + "\n\n".join(sample_data)

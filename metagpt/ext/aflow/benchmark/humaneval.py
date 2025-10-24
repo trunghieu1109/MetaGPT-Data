@@ -149,3 +149,18 @@ class HumanEvalBenchmark(BaseBenchmark):
 
     def get_result_columns(self) -> List[str]:
         return ["inputs", "prediction", "expected_output", "score", "execution_logs"]
+
+    def get_description(self):
+        general_desc = """
+Task: Generate Python code functions from problem descriptions and pass provided unit tests.
+Input: A problem specification in natural language describing function API and behavior.
+Output: Python code implementing the function that satisfies all given test cases.
+This evaluates code synthesis ability for functional correctness and test compliance.​
+        """
+        
+        sample_data = [f"Prompt: {sample['prompt']}\n\nEntry Point: {sample['entry_point']}\n\n Sample Test: {sample['test']}" for sample in self.val_data[:3]]
+        
+        return general_desc + "\n\n" + "\n\n".join(sample_data)
+        
+        
+        

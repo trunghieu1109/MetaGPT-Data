@@ -120,30 +120,62 @@ Format
         
     async def _generate(self):
         # TODO: Consider each scenario, generate the corresponding mas in form of an executable Python code function
+        task = self.benchmark.get_description()
         
-        task = "Every morning Aya goes for a $9$-kilometer-long walk and stops at a coffee shop afterwards. When she walks at a constant speed of $s$ kilometers per hour, the walk takes her 4 hours, including $t$ minutes spent in the coffee shop. When she walks $s+2$ kilometers per hour, the walk takes her 2 hours and 24 minutes, including $t$ minutes spent in the coffee shop. Suppose Aya walks at $s+\frac{1}{2}$ kilometers per hour. Find the number of minutes the walk takes her, including the $t$ minutes spent in the coffee shop." 
+        scenario_path = os.path.join(self.save_path, "scenario.txt")
+        plan_path = os.path.join(self.save_path, "plan.json")
+        mas_path = os.path.join(self.save_path, "graph.py")
         
-        # get the scenario
-        scenario = self.scenarios.get()
+        scenario, plan, mas = "", "", ""
         
-        # generate the task decomposition in this scenario
-        plan = await self._generate_plan(task, scenario)
-
-        # generate the corresponding mas
-        mas = await self._generate_mas(scenario, plan)
-        
-        # postprocess mas
-        mas = COMPLETE_MAS_TEMPLATE.format(workflow_class=mas)
-
-        graph_path = os.path.join(self.save_path, "graph.py")
-        directory = os.path.dirname(graph_path)
-
-        if not os.path.exists(graph_path):
+        # check scenario
+        if os.path.exists(scenario_path):
+            with open(scenario_path, "r", encoding="utf-8") as file:
+                scenario = file.read()
+                
+        else:
+            # get the scenario
+            scenario = self.scenarios.get()
+            
+            directory = os.path.dirname(scenario_path)
             os.makedirs(directory, exist_ok=True)
             
-            with open(graph_path, "w") as f:
-                f.write(mas)
+            with open(scenario_path, "w", encoding="utf-8") as file:
+                file.write(scenario)
+        
+        # check plan     
+        if os.path.exists(plan_path):
+            with open(plan_path, "r", encoding="utf-8") as file:
+                plan = json.load(file)
+                
+        else:        
+            # generate the task decomposition in this scenario
+            plan = await self._generate_plan(task, scenario)
+            
+            directory = os.path.dirname(plan_path)
+            os.makedirs(directory, exist_ok=True)
+            
+            with open(plan_path, "w", encoding="utf-8") as file:
+                json.dump(plan, file, ensure_ascii=False, indent=4)
+          
+        # check mas  
+        if os.path.exists(mas_path):
+            with open(mas_path, "r", encoding="utf-8") as file:
+                mas = file.read()
+                
+        else:
+            # generate the corresponding mas
+            mas = await self._generate_mas(scenario, plan)
+            
+            # postprocess mas
+            mas = COMPLETE_MAS_TEMPLATE.format(workflow_class=mas)
 
+            directory = os.path.dirname(mas_path)
+            os.makedirs(directory, exist_ok=True)
+                
+            with open(mas_path, "w") as f:
+                f.write(mas)
+            
         # return scenario, plan and mas
         return scenario, plan, mas
     
@@ -165,7 +197,6 @@ Format
         except ImportError as e:
             logger.info(f"Error loading graph for sample_id: {self.sample_id}, dataset: {self.dataset}, error : {e}")
             raise
-        print(self.exec_llm)
         
         # execute and then evaluate code -> get the logs and labels for each sample
         score = await evaluator.graph_evaluate(
@@ -216,7 +247,6 @@ async def main():
     for i in range(n_sample):
         generator = DataGenerator(gen_model, exec_model, args.dataset, "examples/generate_sample_data/generated_data", i)
         await generator.create()
-    
         await generator.generate_sample_data()
     
 if __name__ == "__main__":

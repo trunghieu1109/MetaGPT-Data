@@ -69,3 +69,18 @@ class HotpotQABenchmark(BaseBenchmark):
 
     def get_result_columns(self) -> List[str]:
         return ["question", "context", "prediction", "expected_output", "score", "execution_logs"]
+
+    def get_description(self):
+        general_desc = """
+Task: Multi-hop question answering requiring reasoning over multiple paragraphs to answer a complex question.
+Input: A natural language question and a set of supporting paragraphs (typically from Wikipedia).
+Output: A text answer which can be a span from the paragraphs or a "yes/no" response, along with identified supporting sentences that justify the answer.
+The model must aggregate relevant facts across documents and perform multi-step inference to generate both the answer and evidence sentences.
+        """
+        
+        sample_data = [f"Context: {sample['context']}\n\nQuestion: {sample['question']}\n\n Sample Answer: {sample['answer']}" for sample in self.val_data[:3]]
+        
+        return general_desc + "\n\n" + "\n\n".join(sample_data)
+        
+        
+        

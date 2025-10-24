@@ -109,3 +109,6 @@ class BaseBenchmark(ABC):
         average_score = self.save_results_to_csv(results, columns)
         logger.info(f"Average score on {self.name} dataset: {average_score:.5f}")
         return average_score
+    
+    def get_description(self):
+        pass

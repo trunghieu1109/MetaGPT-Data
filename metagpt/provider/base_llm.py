@@ -267,7 +267,7 @@ class BaseLLM(ABC):
         """Required to provide the first text of choice"""
         message = rsp.get("choices")[0]["message"]
         if "reasoning_content" in message:
-            self.reasoning_content = message["reasoning_content"]
+            self.reasoning_content = message["reasoning_content"]       
         return message["content"]
 
     def get_choice_delta_text(self, rsp: dict) -> str:

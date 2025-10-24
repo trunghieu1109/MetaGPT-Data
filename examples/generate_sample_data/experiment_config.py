@@ -17,31 +17,31 @@ EXPERIMENT_CONFIGS: Dict[str, ExperimentConfig] = {
     "DROP": ExperimentConfig(
         dataset="DROP",
         question_type="qa",
-        operators=["Custom", "AnswerGenerate", "ScEnsemble", "Review", "Revise", "Format", "Debater", "Judge"],
+        operators=["Custom", "AnswerGenerate", "ScEnsemble", "Review", "Revise", "Format", "Debater", "Judge"]
     ),
     "HotpotQA": ExperimentConfig(
         dataset="HotpotQA",
         question_type="qa",
-        operators=["Custom", "AnswerGenerate", "ScEnsemble", "Review", "Revise", "Format", "Debater", "Judge"],
+        operators=["Custom", "AnswerGenerate", "ScEnsemble", "Review", "Revise", "Format", "Debater", "Judge"]
     ),
     "MATH": ExperimentConfig(
         dataset="MATH",
         question_type="math",
-        operators=["Custom", "ScEnsemble", "Programmer"],
+        operators=["Custom", "ScEnsemble", "Programmer", "Review", "Revise", "Format", "Debater", "Judge"]
     ),
     "GSM8K": ExperimentConfig(
         dataset="GSM8K",
         question_type="math",
-        operators=["Custom", "ScEnsemble", "Programmer"],
+        operators=["Custom", "ScEnsemble", "Programmer", "Review", "Revise", "Format", "Debater", "Judge"],
     ),
     "MBPP": ExperimentConfig(
         dataset="MBPP",
         question_type="code",
-        operators=["Custom", "CustomCodeGenerate", "ScEnsemble", "Test"],
+        operators=["Custom", "CustomCodeGenerate", "ScEnsemble", "Test", "Review", "Revise", "Debater", "Judge"],
     ),
     "HumanEval": ExperimentConfig(
         dataset="HumanEval",
         question_type="code",
-        operators=["Custom", "CustomCodeGenerate", "ScEnsemble", "Test"],
+        operators=["Custom", "CustomCodeGenerate", "ScEnsemble", "Test", "Review", "Revise", "Debater", "Judge"],
     ),
 }

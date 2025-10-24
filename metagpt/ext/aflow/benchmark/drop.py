@@ -81,3 +81,13 @@ class DROPBenchmark(BaseBenchmark):
 
     def get_result_columns(self) -> List[str]:
         return ["inputs", "prediction", "expected_output", "score", "execution_logs"]
+
+    def get_description(self):
+        general_desc = """
+The DROP (Discrete Reasoning Over Paragraphs) benchmark challenges models to perform multi-step discrete reasoning on text. Given a paragraph and a complex question, the model must extract relevant information and execute operations such as addition, subtraction, counting, sorting, or comparison to generate the correct answer. The task requires understanding both the semantics of the paragraph and the logical structure of the question, often necessitating event coreference resolution and numerical reasoning over multiple data points."
+This description highlights the core challenges and reasoning skills needed for the benchmark, helping an agent focus on strategies to handle language understanding combined with symbolic-like numeric processing.
+        """
+        
+        sample_data = [f"Question and context: {sample['context']}. Possible Answer: {sample['ref_text']}" for sample in self.val_data[:3]]
+        
+        return general_desc + "\n\n" + "\n\n".join(sample_data)

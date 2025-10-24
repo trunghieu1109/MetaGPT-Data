@@ -288,7 +288,7 @@ class OpenAILLM(BaseLLM):
             return self.config.max_token
         # FIXME
         # https://community.openai.com/t/why-is-gpt-3-5-turbo-1106-max-tokens-limited-to-4096/494973/3
-        return min(get_max_completion_tokens(messages, self.model, self.config.max_token), 4096)
+        return min(get_max_completion_tokens(messages, self.model, self.config.max_token), 8192)
 
     @handle_exception
     async def amoderation(self, content: Union[str, list[str]]):

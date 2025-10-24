@@ -119,3 +119,18 @@ class MBPPBenchmark(BaseBenchmark):
 
     def get_result_columns(self) -> List[str]:
         return ["inputs", "prediction", "expected_output", "score", "execution_logs"]
+
+    def get_description(self):
+        general_desc = """
+Task: Code generation of Python solutions for simple programming problems described in natural language.
+Input: A natural language problem statement describing a function or program requirement.
+Output: Python code implementing a solution meeting the specification (ideally runnable and correct).
+The goal is to translate problem descriptions into correct functional code using basic constructs and logic.
+        """
+        
+        sample_data = [f"Prompt: {sample['prompt']}\n\nEntry Point: {sample['entry_point']}\n\n Sample Test: {sample['test']}" for sample in self.val_data[:3]]
+        
+        return general_desc + "\n\n" + "\n\n".join(sample_data)
+        
+        
+        

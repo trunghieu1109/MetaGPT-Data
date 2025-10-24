@@ -135,3 +135,15 @@ class MATHBenchmark(BaseBenchmark):
 
     def get_result_columns(self) -> List[str]:
         return ["question", "prediction", "expected_output", "score", "execution_logs"]
+
+    def get_description(self):
+        general_desc = """
+Task: Solve complex math problems stated in natural language, requiring multi-step reasoning.
+Input: A math problem text (e.g., algebra, geometry) describing a problem scenario.
+Output: A numerical or symbolic solution to the problem, sometimes including intermediate steps.
+The model must understand, reason, and compute to produce accurate math solutions.
+        """
+        
+        sample_data = [f"Question: {sample['problem']}. Possible Answer: {sample['solution']}" for sample in self.val_data[:3]]
+        
+        return general_desc + "\n\n" + "\n\n".join(sample_data)
