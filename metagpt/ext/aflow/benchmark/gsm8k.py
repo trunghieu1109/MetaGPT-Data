@@ -56,7 +56,7 @@ class GSM8KBenchmark(BaseBenchmark):
     def get_result_columns(self) -> List[str]:
         return ["task", "output", "expected_output", "score", "execution_logs"]
 
-    def get_description(self):
+    def get_raw_description(self):
         general_desc = """
 Task: Solve grade school level math word problems with multi-step arithmetic reasoning.
 Input: A math problem described as a word problem in natural language, involving quantities and conditions.
@@ -67,3 +67,24 @@ The benchmark checks the model’s ability to extract facts, reason logically, a
         sample_data = [f"Question: {sample['question']}. Possible Answer: {sample['answer']}" for sample in self.val_data[:3]]
         
         return general_desc + "\n\n" + "\n\n".join(sample_data)
+    
+    def get_description(self):
+        return """
+* **Main Objective:**
+  The goal of this task is to evaluate a model’s ability to **solve mathematically complex problems** stated in natural language, requiring *multi-step reasoning*, *symbolic manipulation*, and *conceptual understanding* across domains such as algebra, geometry, number theory, or arithmetic logic.
+
+* **Input Format:**
+  The input consists of a **natural-language math problem** describing a scenario that may involve relationships between quantities, geometric figures, equations, or logical constraints.
+  Problems may include mathematical symbols, expressions, or diagrams that must be interpreted correctly as part of the reasoning process.
+
+* **Output Format:**
+  The output should be a **single final answer** — either a numerical value or a symbolic expression — representing the correct solution to the problem.
+  No explanation, reasoning steps, or intermediate calculations are required in the output.
+
+* **Additional Requirements:**
+
+  * The answer must be **mathematically correct** and consistent with the conditions stated in the problem.
+  * Problems may require performing **multi-step reasoning** such as algebraic manipulation, substitution, or geometric deduction.
+  * The model should accurately interpret any **mathematical notations or contextual clues** in the text.
+  * The final output must be **concise and precise**, containing only the result of the problem.
+        """

@@ -120,7 +120,7 @@ class MBPPBenchmark(BaseBenchmark):
     def get_result_columns(self) -> List[str]:
         return ["task", "output", "expected_output", "score", "execution_logs"]
 
-    def get_description(self):
+    def get_raw_description(self):
         general_desc = """
 Task: Code generation of Python solutions for simple programming problems described in natural language.
 Input: A natural language problem statement describing a function or program requirement.
@@ -130,8 +130,30 @@ The goal is to translate problem descriptions into correct functional code using
         
         sample_data = [f"Prompt: {sample['prompt']}\n\nEntry Point: {sample['entry_point']}\n\n Sample Test: {sample['test']}" for sample in self.val_data[:3]]
         
-        # return general_desc + "\n\n" + "\n\n".join(sample_data)
-        return general_desc
+        return general_desc + "\n\n" + "\n\n".join(sample_data)
+        # return general_desc
         
-        
-        
+    def get_description(self):
+        return """
+* **Main Objective:**
+  The task evaluates a model’s ability to **generate correct and functional Python code** from natural language problem descriptions.
+  The primary goal is to assess fundamental programming competence — understanding the specification and implementing it accurately using Python syntax and logic.
+
+* **Input Format:**
+  The input is a **natural-language prompt** describing a small programming task.
+  Each task specifies the intended **function behavior**, sometimes including a function name or input-output example for clarity.
+  The problem typically involves basic programming constructs such as conditionals, loops, arithmetic operations, list/string manipulation, or simple algorithmic reasoning.
+
+* **Output Format:**
+  The output should be a **complete Python function implementation** that directly fulfills the described requirements.
+  The function must use the correct **entry point name** and be **syntactically valid and executable**.
+  Only the **final code** is expected in the output — no explanation, comments, or extra text should be included.
+
+* **Additional Requirements:**
+
+  * The generated code should **produce correct results** for all specified or implied test cases.
+  * Solutions should rely on **basic Python features** and standard library functions without unnecessary complexity.
+  * The function signature and naming must **match the prompt’s specification** exactly.
+  * Code should follow **clear and functional structure**, returning the appropriate result instead of printing it.
+  * The model is expected to **generalize** from natural-language instructions to correct, runnable code.
+        """

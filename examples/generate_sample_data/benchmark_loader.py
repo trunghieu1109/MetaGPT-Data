@@ -26,3 +26,14 @@ async def create_benchmark(name: str, is_test: bool = False) -> BaseBenchmark:
     benchmark = BENCHMARK_MAPPING[name.lower()](name, file_path, log_path)
     await benchmark.load_and_save_data()
     return benchmark
+
+async def main():
+    benchmark_name = ['gsm8k', 'math', 'hotpotqa', 'mbpp', 'drop', 'humaneval']
+    for benchmark in benchmark_name:
+        benchmark_obj = await create_benchmark(benchmark)
+        await benchmark_obj.load_and_save_data()
+        
+        print(f"Benchmark: {benchmark}, description: {benchmark_obj.get_description()}")
+
+if __name__ == "__main__":
+    asyncio.run(main())

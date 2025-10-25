@@ -82,7 +82,7 @@ class DROPBenchmark(BaseBenchmark):
     def get_result_columns(self) -> List[str]:
         return ["task", "output", "expected_output", "score", "execution_logs"]
 
-    def get_description(self):
+    def get_raw_description(self):
         general_desc = """
 The DROP (Discrete Reasoning Over Paragraphs) benchmark challenges models to perform multi-step discrete reasoning on text. Given a paragraph and a complex question, the model must extract relevant information and execute operations such as addition, subtraction, counting, sorting, or comparison to generate the correct answer. The task requires understanding both the semantics of the paragraph and the logical structure of the question, often necessitating event coreference resolution and numerical reasoning over multiple data points."
 This description highlights the core challenges and reasoning skills needed for the benchmark, helping an agent focus on strategies to handle language understanding combined with symbolic-like numeric processing.
@@ -91,3 +91,29 @@ This description highlights the core challenges and reasoning skills needed for 
         sample_data = [f"Question and context: {sample['context']}. Possible Answer: {sample['ref_text']}" for sample in self.val_data[:3]]
         
         return general_desc + "\n\n" + "\n\n".join(sample_data)
+
+    def get_description(self):
+        return """
+* **Main Objective:**
+  The task evaluates a model’s ability to perform **discrete and numerical reasoning** over textual passages.
+  The goal is to answer complex questions that require **multi-step logical and arithmetic operations**, testing both reading comprehension and quantitative reasoning skills.
+
+* **Input Format:**
+  The input includes:
+
+  1. A **natural-language question** requiring reasoning over factual and numerical details.
+  2. A **context paragraph** containing the relevant information needed to derive the answer.
+     The passage may describe events, quantities, comparisons, or timelines that must be integrated and interpreted to produce the correct result.
+
+* **Output Format:**
+  The output should be the **final answer only**, expressed as a number, date, or short text span derived from the passage.
+  No reasoning steps, explanations, or supporting details should be included in the output.
+
+* **Additional Requirements:**
+
+  * The question may require **operations such as addition, subtraction, counting, sorting, or comparison** based on the text.
+  * The model must accurately **extract and combine relevant information** from different parts of the passage.
+  * Understanding of **event order, duration, and numerical relationships** is often necessary to reach the correct result.
+  * Answers must be **logically consistent** with both the quantitative facts and the linguistic meaning of the passage.
+  * The model should demonstrate **symbolic-like reasoning** while grounding its computation in natural-language understanding.
+        """

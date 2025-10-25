@@ -150,7 +150,7 @@ class HumanEvalBenchmark(BaseBenchmark):
     def get_result_columns(self) -> List[str]:
         return ["task", "output", "expected_output", "score", "execution_logs"]
 
-    def get_description(self):
+    def get_raw_description(self):
         general_desc = """
 Task: Generate Python code functions from problem descriptions and pass provided unit tests.
 Input: A problem specification in natural language describing function API and behavior.
@@ -162,5 +162,26 @@ This evaluates code synthesis ability for functional correctness and test compli
         
         return general_desc + "\n\n" + "\n\n".join(sample_data)
         
-        
-        
+    def get_description(self):
+        return """
+* **Main Objective:**
+  The task measures a model’s ability to **synthesize correct Python functions** from natural-language specifications.
+  It evaluates functional correctness by checking whether the generated implementation passes all **hidden unit tests**, making it a direct test of code understanding, logic construction, and generalization from textual problem descriptions.
+
+* **Input Format:**
+  The input consists of a **problem prompt** written in natural language and accompanied by a **function signature** (entry point).
+  The description defines the intended behavior, constraints, and examples of valid input-output pairs.
+  Each task specifies exactly one **function to implement**, which should align with the provided signature and expected semantics.
+
+* **Output Format:**
+  The output should be a **complete Python function implementation** that fulfills the described behavior and passes all provided (and hidden) test cases.
+  Only the final function definition is required — no additional explanations, comments, or imports beyond what’s necessary for correctness.
+
+* **Additional Requirements:**
+
+  * The generated function must be **syntactically valid** and **runnable** in Python.
+  * The solution must satisfy all **unit tests** that evaluate both correctness and edge-case handling.
+  * The implementation should adhere to the **given function name and parameter list** exactly.
+  * Logic should be clear, minimal, and consistent with standard Python practices — unnecessary complexity should be avoided.
+  * The benchmark focuses on **functional accuracy**, not style or performance optimization.
+        """

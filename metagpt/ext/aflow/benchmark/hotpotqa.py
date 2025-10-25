@@ -70,7 +70,7 @@ class HotpotQABenchmark(BaseBenchmark):
     def get_result_columns(self) -> List[str]:
         return ["task", "output", "expected_output", "score", "execution_logs"]
 
-    def get_description(self):
+    def get_raw_description(self):
         general_desc = """
 Task: Multi-hop question answering requiring reasoning over multiple paragraphs to answer a complex question.
 Input: A natural language question and a set of supporting paragraphs (typically from Wikipedia).
@@ -83,4 +83,29 @@ The model must aggregate relevant facts across documents and perform multi-step 
         return general_desc + "\n\n" + "\n\n".join(sample_data)
         
         
-        
+    def get_description(self):
+        return """
+* **Main Objective:**
+  The task evaluates a model’s ability to perform **multi-hop reasoning** — combining and integrating information from **multiple text passages** to answer complex natural language questions. It measures how well a model can locate relevant facts across documents and infer relationships between them to arrive at a correct conclusion.
+
+* **Input Format:**
+  The input includes:
+
+  1. A **natural-language question** that often requires reasoning across different topics or entities.
+  2. A **set of supporting paragraphs** or documents (typically drawn from encyclopedic text).
+     The relevant evidence may be distributed across multiple paragraphs, requiring the model to connect information across sentences and documents.
+
+* **Output Format:**
+  The output should contain **only the final answer** to the question — either:
+
+  * A **short textual span** extracted or synthesized from the input paragraphs, or
+  * A **binary response** (“yes” or “no”) when applicable.
+    No explanation, supporting sentences, or reasoning trace is required in the output.
+
+* **Additional Requirements:**
+
+  * The model must perform **multi-step inference** by aggregating and reasoning over multiple pieces of evidence.
+  * The reasoning process may involve **entity linking, coreference resolution**, and **logical deduction** across sentences.
+  * Questions may combine **factual knowledge** from different domains, requiring the model to **bridge contextual clues** between related entities or events.
+  * The final answer must be **semantically precise** and **directly supported** by the provided context.
+        """

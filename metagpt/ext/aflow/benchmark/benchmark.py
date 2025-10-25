@@ -112,3 +112,6 @@ class BaseBenchmark(ABC):
     
     def get_description(self):
         pass
+    
+    def get_raw_description(self):
+        pass
