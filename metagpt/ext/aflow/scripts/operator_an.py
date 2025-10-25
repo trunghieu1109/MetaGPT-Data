@@ -51,7 +51,7 @@ class ReviewOp(BaseModel):
 
 
 class ReviseOp(BaseModel):
-    solution: str = Field(default="", description="Based on the feedback, revised solution for this problem")
+    revised_solution: str = Field(default="", description="Based on the feedback, revised solution for this problem")
 
 class DebaterOp(BaseModel):
     feedback: str = Field(default="", description="Based on the proposed solutions and your thought, return the feedback for these proposed solutions")

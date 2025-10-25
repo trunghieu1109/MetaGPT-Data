@@ -38,12 +38,12 @@ class Workflow:
     'AnswerGenerate': {
         'description': "Generate a direct answer based on the given question or input text using the predefined answer generation prompt.",
         'input': {
-            'input': {
+            'problem': {
                 'type': 'string',
                 'desc': 'The question or problem statement to be answered.'
             }
         },
-        'interface': 'self.answer_generate(input="")',
+        'interface': 'self.answer_generate(problem="")',
         'output': {
             'thought': {
                 'type': 'string',
@@ -65,7 +65,7 @@ class Workflow:
 
     async def __call__(self, problem: str):
         # Step x: .....
-        solution, logs = await self.answer_generate(input=problem)
+        solution, logs = await self.answer_generate(problem=problem)
         invoking_logs.append(logs)
         
         step_x_thought = solution['thought']
@@ -259,9 +259,13 @@ class Workflow:
             'solution': {
                 'type': 'string',
                 'desc': 'The unformatted or raw generated solution.'
+            },
+            'format': {
+                'type': 'string',
+                'desc': 'Formatting instructions or preferences.'  
             }
         },
-        'interface': 'self.format(problem="", solution="")',
+        'interface': 'self.format(problem="", solution="", format="")',
         'output': {
             'solution': {
                 'type': 'string',
@@ -279,7 +283,7 @@ class Workflow:
 
     async def __call__(self, problem: str):    
         # Step x: .....
-        solution, logs = await self.format(problem=problem, solution=".....")
+        solution, logs = await self.format(problem=problem, solution=".....", format="...........")
         invoking_logs.append(logs)
         
         step_x_solution = solution['solution']
@@ -344,7 +348,7 @@ class Workflow:
         },
         'interface': 'self.revise(problem="", solution="", feedback="")',
         'output': {
-            'solution': {
+            'revised_solution': {
                 'type': 'string',
                 'desc': 'Based on the feedback, revised solution for this problem'
             }
@@ -363,7 +367,7 @@ class Workflow:
         solution, logs = await self.revise(problem=problem, solution=".....", feedback="....")
         invoking_logs.append(logs)
         
-        step_x_solution = solution['solution']
+        step_x_revised_solution = solution['revised_solution']
         """
     },
     'MdEnsemble': {

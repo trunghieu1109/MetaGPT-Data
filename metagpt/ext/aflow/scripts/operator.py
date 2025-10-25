@@ -106,8 +106,8 @@ class AnswerGenerate(Operator):
     def __init__(self, llm: LLM, name: str = "AnswerGenerate"):
         super().__init__(llm, name)
 
-    async def __call__(self, input: str, mode: str = None) -> Tuple[str, str]:
-        prompt = ANSWER_GENERATION_PROMPT.format(input=input)
+    async def __call__(self, problem: str, mode: str = None) -> Tuple[str, str]:
+        prompt = ANSWER_GENERATION_PROMPT.format(problem=problem)
         response, reasoning = await self._fill_node(AnswerGenerateOp, prompt, mode="xml_fill")
         
         logs = {
@@ -438,8 +438,8 @@ class Format(Operator):
     def __init__(self, llm: LLM, name: str = "Format"):
         super().__init__(llm, name)
 
-    async def __call__(self, problem, solution, mode: str = None):
-        prompt = FORMAT_PROMPT.format(problem_description=problem, solution=solution)
+    async def __call__(self, problem, solution, format, mode: str = None):
+        prompt = FORMAT_PROMPT.format(problem_description=problem, solution=solution, format=format)
         response, reasoning = await self._fill_node(FormatOp, prompt, mode="xml_fill")
         
         logs = {

@@ -90,7 +90,13 @@ class DataGenerator:
         # TODO: From the available opearators, generate one scenario that has exactly max_scenario_len steps, and different from the existing scenarios
         return """
 <start_scenario>
-Custom -> CustomCodeGenerate -> Test -> Review -> Revise
+Custom
+for i in (3):
+    AnswerGenerate
+ScEnsemble
+Review
+Revise
+Format
 <end_scenario>
         """
     

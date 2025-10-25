@@ -4,21 +4,20 @@
 # @Desc    : prompts of operators
 
 ANSWER_GENERATION_PROMPT = """
+You are a problem solver. Your task is to directly answer the given question.
+
+Your question: {problem}
+
 Think step by step and solve the problem.
 1. In the "thought" field, explain your thinking process in detail.
 2. In the "answer" field, provide the final answer concisely and clearly. The answer should be a direct response to the question, without including explanations or reasoning.
-Your task: {input}
-
-The output must be in complete XML format:
-{{
-   'thought': ...,
-   'answer': ...
-}}
 """
 
 FORMAT_PROMPT = """
 For the question described as {problem_description},
 please extract a short and concise answer contains only one word/few words from the following solution: {solution}.
+Let's format the solution in the following format: {format}
+
 Make sure there are no additional comments or explanations in your response.
 
 The output must be in complete XML format:
@@ -28,6 +27,8 @@ The output must be in complete XML format:
 """
 
 SC_ENSEMBLE_PROMPT = """
+You are an aggregator who aggregates answers from multiple experts. Your task is to identify the answer that appears most frequently across the provided answers.
+
 Given the question described as follows: {question}
 Several solutions have been generated to address the given question. They are as follows:
 {solutions}
@@ -104,17 +105,17 @@ The output must be in complete XML format:
 """
 
 REVISE_PROMPT = """
-Given a problem and a thoughtful solution which is just reviewed as incorrect, your task is to revise the solution to solve the question and ensure the final code solution is wrapped with ```python```.
+Given a problem and a thoughtful solution which is just reviewed as incorrect, your task is to revise the solution to solve the question.
 
 problem: {problem}
 solution: {solution}
 feedback: {feedback}
 
-Ensure the output code is self-contained, and without any additional text or test cases.
-The output must be in complete XML format:
-<solution>
+Ensure your revised solution is clear and address the problem in feedback.
+The output must be in complete XML format, only includes `revised_solution` field. This must include </revised_solution> in the end:
+<revised_solution>
 ...
-</solution>
+</revised_solution>
 """
 
 DEBATER_PROMPT = """
