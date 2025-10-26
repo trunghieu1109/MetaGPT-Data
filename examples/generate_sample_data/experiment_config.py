@@ -17,12 +17,12 @@ EXPERIMENT_CONFIGS: Dict[str, ExperimentConfig] = {
     "DROP": ExperimentConfig(
         dataset="DROP",
         question_type="qa",
-        operators=["Custom", "AnswerGenerate", "ScEnsemble", "Review", "Revise", "Format", "Debater", "Judge"]
+        operators=["Custom", "AnswerGenerate", "ScEnsemble", "Review", "Revise", "Format", "Debater"]
     ),
     "HotpotQA": ExperimentConfig(
         dataset="HotpotQA",
         question_type="qa",
-        operators=["Custom", "AnswerGenerate", "ScEnsemble", "Review", "Revise", "Format", "Debater", "Judge"]
+        operators=["Custom", "AnswerGenerate", "ScEnsemble", "Review", "Revise", "Format", "Debater"]
     ),
     "MATH": ExperimentConfig(
         dataset="MATH",

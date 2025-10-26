@@ -7,6 +7,7 @@ from tenacity import retry, retry_if_exception_type, stop_after_attempt, wait_fi
 
 from metagpt.ext.aflow.benchmark.benchmark import BaseBenchmark
 from metagpt.logs import logger
+from examples.generate_sample_data.graph_based_scenario.graph import Graph
 
 
 class DROPBenchmark(BaseBenchmark):
@@ -117,3 +118,40 @@ This description highlights the core challenges and reasoning skills needed for 
   * Answers must be **logically consistent** with both the quantitative facts and the linguistic meaning of the passage.
   * The model should demonstrate **symbolic-like reasoning** while grounding its computation in natural-language understanding.
         """
+        
+    def get_nodes(self):
+        return [
+            ("A", "Custom"), ("C", "ScEnsemble"),
+            ("D", "Review"), ("E", "Revise"), ("F", "Format"),
+            ("G", "Debater"), ("I", "Start Loop"), ("J", "End Loop"),
+            ("P", "Start"), ("Q", "End")
+        ]
+        
+    def get_edges(self):
+        return [
+            ("P", "A"), ("P", "I"),
+            ("A", "A"), ("A", "D"), ("A", "F"), ("A", "I"), ("A", "J"),
+            ("I", "A"), ("C", "A"), ("J", "A"),
+            ("J", "C"), ("C", "D"), ("C", "F"), ("C", "I"),
+            ("D", "E"), ("I", "D"),
+            ("E", "J"), ("E", "F"),
+            ("J", "F"), ("I", "G"), ("G", "J"), ("J", "D"),
+            ("A", "Q"), ("C", "Q"), ("E", "Q"), ("F", "Q")
+        ]
+                
+    def create_graph(self):
+        graph = Graph()
+        nodes = self.get_nodes()
+        edges = self.get_edges()
+        
+        for n, label in nodes:
+            graph.add_node(n, label)
+            
+        for start, end in edges:
+            graph.add_edge(start, end)
+            
+        print("Graph summary: ", graph)
+        return graph
+    
+    def get_lower_accuracy_data(self):
+        return [3, 5, 10, 11, 12, 13, 17, 18, 20, 26, 27, 30, 39, 43, 44, 54, 61, 79, 82, 94, 102, 125, 132, 150, 153, 159, 178, 182]

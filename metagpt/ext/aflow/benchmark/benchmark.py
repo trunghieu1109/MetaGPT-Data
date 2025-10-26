@@ -41,6 +41,28 @@ class BaseBenchmark(ABC):
                 data.append(json.loads(line))
         self.val_data = data
         return data
+    
+    async def get_specific_data(self, specific_samples: List[int]) -> List[dict]:
+        """Đọc chỉ các dòng có index nằm trong specific_samples"""
+        data = []
+        specific_samples = set(specific_samples)  # chuyển sang set để lookup nhanh
+
+        async with aiofiles.open(self.file_path, mode="r", encoding="utf-8") as file:
+            idx = 0
+            async for line in file:
+                if idx in specific_samples:
+                    try:
+                        data.append(json.loads(line))
+                    except json.JSONDecodeError:
+                        print(f"⚠️ Lỗi JSON tại dòng {idx}, bỏ qua.")
+                idx += 1
+
+                # Nếu đã đủ tất cả các dòng cần lấy → thoát sớm
+                if len(data) == len(specific_samples):
+                    break
+
+        self.val_data = data
+        return data
 
 
     def save_results_to_csv(self, results: List[Tuple[Any, ...]], columns: List[str]):
@@ -114,4 +136,16 @@ class BaseBenchmark(ABC):
         pass
     
     def get_raw_description(self):
+        pass
+    
+    def get_nodes(self):
+        pass
+    
+    def get_edges(self):
+        pass
+    
+    def create_graph(self):
+        pass
+    
+    def get_lower_accuracy_data(self):
         pass

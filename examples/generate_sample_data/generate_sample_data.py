@@ -3,6 +3,7 @@ import argparse
 import sys
 import os
 import json
+import random
 import pandas as pd
 from typing import Dict, List
 import asyncio
@@ -49,7 +50,7 @@ def parse_args():
     parser.add_argument(
         "--results_path",
         type=str,
-        default="generated_data",
+        default="examples/generate_sample_data/generated_data",
         help="The generated data folders",
     )
     
@@ -67,10 +68,39 @@ def parse_args():
         help="Specifies the model used to execute mas",
     )
     
+    parser.add_argument(
+        "--max_scenario_lens",
+        type=int,
+        default=15,
+        help="Specifies the max length of a scenario",
+    )
+    
+    parser.add_argument(
+        "--start_scenario_idx",
+        type=int,
+        default=0,
+        help="Specifies the start scenario index",
+    )
+    
+    parser.add_argument(
+        "--end_scenario_idx",
+        type=int,
+        default=5,
+        help="Specifies the end scenario index",
+    )
+    
+    parser.add_argument(
+        "--n_sample",
+        type=int,
+        default=1,
+        help="Specifies number of samples for each scenario",
+    )
+    
     return parser.parse_args()
 
 class DataGenerator:
-    def __init__(self, gen_model: LLMConfig, exec_model: LLMConfig, dataset: str, save_path: str, sample_id: int, max_scenario_len: int = 5, max_scenarios: int = 5):
+    def __init__(self, gen_model: LLMConfig, exec_model: LLMConfig, dataset: str, save_path: str, sample_id: int, 
+                 max_scenario_len: int = 10, max_scenarios: int = 5, start_scenario_idx: int = 0, end_scenario_idx: int = 5):
         self.gen_model_config = gen_model
         self.exec_model_config = exec_model
         self.avail_operators = [OPERATORS_LIST[op] for op in EXPERIMENT_CONFIGS[dataset].operators]
@@ -80,32 +110,47 @@ class DataGenerator:
         self.max_scenarios = max_scenarios
         self.scenarios = Queue(maxsize=self.max_scenarios)
         self.save_path = os.path.join(save_path, self.dataset.lower(), f"sample_{self.sample_id}")
+        self.full_scenario_path = os.path.join(save_path, self.dataset.lower(), "scenario_list.json")
+        self.start_scenario_idx = start_scenario_idx
+        self.end_scenario_idx = end_scenario_idx
+        self.scenario_list = []
         
     async def create(self):
         self.gen_llm = create_llm_instance(self.gen_model_config)
         self.exec_llm = create_llm_instance(self.exec_model_config)
         self.benchmark = await create_benchmark(self.dataset)
-        
-    async def _generate_scenario(self):
-        # TODO: From the available opearators, generate one scenario that has exactly max_scenario_len steps, and different from the existing scenarios
-        return """
-<start_scenario>
-Custom
-for i in (3):
-    AnswerGenerate
-ScEnsemble
-Review
-Revise
-Format
-<end_scenario>
-        """
     
     async def generate_all_scenario(self):
+        directory = os.path.dirname(self.full_scenario_path)
+        os.makedirs(directory, exist_ok=True)
+        if os.path.exists(self.full_scenario_path):
+            with open(self.full_scenario_path, "r", encoding="utf-8") as f:
+                return json.load(f)
         # TODO: From the available operators, generate all scenarios that have exactly max_scenario_len steps, each step is addressed by only one operator.
         # Iterate each combinations of operators, generate all the possible scenarios. consider the relationships and constraints between operators.
-        for i in range(self.max_scenarios):
-            self.scenarios.put(await self._generate_scenario())
-    
+        graph = self.benchmark.create_graph()
+        paths = []
+        formatted_paths = []
+        for path in graph.find_paths("P", "Q", curr_len=0, num_cag = 0, num_agc = 0, max_lens = self.max_scenario_len):
+            if 'Format' in path:
+                formatted_paths.append(" -> ".join(path))
+            else:
+                paths.append(" -> ".join(path))
+        
+        # resample format-contained mas (because it has small impact on model performance)
+        formatted_paths = random.sample(formatted_paths, min(len(formatted_paths), 2000))
+        paths = paths + formatted_paths
+            
+        output_data = {
+            "total_paths": len(paths),
+            "paths": paths,
+        }
+        
+        with open(self.full_scenario_path, "w", encoding="utf-8") as f:
+            json.dump(output_data, f, ensure_ascii=False, indent=4)
+            
+        return output_data
+
     async def _generate_plan(self, task: str, scenario: str):
         prompt = TASK_DECOMPOSER_PROMPT.format(task=task, scenario=scenario, operators=self.avail_operators)
         llm = self.gen_llm
@@ -124,13 +169,13 @@ Format
         response = await invoking(GenerateMASOp, prompt, llm)
         return response['mas_code']
         
-    async def _generate(self):
+    async def _generate(self, scenario_idx: int):
         # TODO: Consider each scenario, generate the corresponding mas in form of an executable Python code function
         task = self.benchmark.get_description()
         
-        scenario_path = os.path.join(self.save_path, "scenario.txt")
-        plan_path = os.path.join(self.save_path, "plan.json")
-        mas_path = os.path.join(self.save_path, "graph.py")
+        scenario_path = os.path.join(self.save_path, f"scenario_{scenario_idx}", "scenario.txt")
+        plan_path = os.path.join(self.save_path, f"scenario_{scenario_idx}", "plan.json")
+        mas_path = os.path.join(self.save_path, f"scenario_{scenario_idx}", "graph.py")
         
         scenario, plan, mas = "", "", ""
         
@@ -141,13 +186,14 @@ Format
                 
         else:
             # get the scenario
-            scenario = self.scenarios.get()
+            scenario = self.scenario_list[scenario_idx]
             
             directory = os.path.dirname(scenario_path)
             os.makedirs(directory, exist_ok=True)
             
             with open(scenario_path, "w", encoding="utf-8") as file:
                 file.write(scenario)
+        print(scenario)
         
         # check plan     
         if os.path.exists(plan_path):
@@ -185,15 +231,15 @@ Format
         # return scenario, plan and mas
         return scenario, plan, mas
     
-    async def _execute(self, exec_code):
+    async def _execute(self, scenario_idx, exec_code):
         # TODO: Execute generated mas, log all the information as much as possible
-        log_path = os.path.join(self.save_path)
-        new_data_path = os.path.join(self.save_path, "data.jsonl")
+        log_path = os.path.join(self.save_path, f"scenario_{scenario_idx}")
+        new_data_path = os.path.join(self.save_path, f"scenario_{scenario_idx}", "data.jsonl")
         
         # init evaluator
         evaluator = Evaluator(eval_path=log_path)
-        
-        workflows_path = self.save_path.replace("\\", ".").replace("/", ".")
+        mas_path = os.path.join(self.save_path, f"scenario_{scenario_idx}")
+        workflows_path = mas_path.replace("\\", ".").replace("/", ".")
         graph_module_name = f"{workflows_path}.graph"
         
         # load mas as graph
@@ -211,6 +257,7 @@ Format
             graph_class,
             {"dataset": self.dataset, "llm_config": self.exec_model_config},
             log_path,
+            eval_list=self.benchmark.get_lower_accuracy_data(), 
             is_test=False,
         )
         
@@ -225,15 +272,24 @@ Format
                 f.write(json_line + "\n")
     
     async def generate_sample_data(self):
-        await self.generate_all_scenario()
+        scenario_list = await self.generate_all_scenario()
+        self.scenario_list = scenario_list['paths']
         
-        # generate mas
-        scenario, plan, mas = await self._generate()
-        # execute mas
-        await self._execute(mas)
+        print(f"Total scenarios: {scenario_list['total_paths']}")
         
-        # synthesize the data, include: MAS, input, output of each agent / operator, instruction, role, reasoning process, the label (True / False)
-        pass
+        for scn in self.scenario_list[:5]:
+            print("--------------------------------")
+            print(scn)
+        
+        exit()
+        for idx, scenario in enumerate(self.scenario_list):
+            if idx < self.start_scenario_idx or idx > self.end_scenario_idx:
+                continue
+            # generate mas
+            scenario_, plan, mas = await self._generate(idx)
+        
+            # execute mas
+            await self._execute(idx, mas)
 
 async def main():
     args = parse_args()
@@ -256,13 +312,20 @@ async def main():
         )
     
     models_config = ModelsConfig.default()
-    gen_model = models_config.get("openai/gpt-oss-20b")
-    exec_model = models_config.get("openai/gpt-oss-20b")
+    gen_model = models_config.get(args.gen_model)
+    exec_model = models_config.get(args.exec_model)
     
-    n_sample = 1
-    
-    for i in range(n_sample):
-        generator = DataGenerator(gen_model, exec_model, args.dataset, "examples/generate_sample_data/generated_data", i)
+    for i in range(args.n_sample):
+        generator = DataGenerator(
+            gen_model, 
+            exec_model,
+            args.dataset, 
+            args.results_path, 
+            i, 
+            max_scenario_len=args.max_scenario_lens, 
+            start_scenario_idx=args.start_scenario_idx, 
+            end_scenario_idx=args.end_scenario_idx
+        )
         await generator.create()
         await generator.generate_sample_data()
     
