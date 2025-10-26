@@ -70,7 +70,7 @@ Every morning Aya goes for a $9$-kilometer-long walk and stops at a coffee shop 
             "We set up equations for walking time at speeds s and s+2, subtract to find s, then compute t, and finally compute total time at speed s+½. The result is 3 hours 24 minutes, which equals 204 minutes."
         ]
         
-        response, logs = await sc_ensemble_op(solutions=solutions, problem=problem)
+        response, logs = await sc_ensemble_op(solutions=solutions, problem=problem, additional_instruction = "")
         print("Result: ", response)
         print("---------------------")
         print("Reasoning: ", logs['reasoning'])
@@ -112,7 +112,7 @@ Every morning Aya goes for a $9$-kilometer-long walk and stops at a coffee shop 
         
         solution = "We set up equations for walking time at two speeds. Let t be coffee time in minutes, so t/60 hours. For speed s: 9/s = 4 - t/60. For speed s+2: 9/(s+2) = 2.4 - t/60. Subtracting gives 9/s - 9/(s+2) = 1.6. Simplify: 18/(s(s+2)) = 1.6 → s(s+2) = 11.25. Solve s^2 + 2s - 11.25 = 0 → s = 2.5 km/h. Plug back to find t: 9/2.5 = 3.6 = 4 - t/60 → t/60 = 0.4 → t = 24 minutes. For speed s+½ = 3 km/h, walking time = 9/3 = 3 hours. Total time = 3 hours + 24 minutes = 3h24m = 204 minutes.",
         
-        response, logs = await review_op(problem=problem, solution=solution)
+        response, logs = await review_op(problem=problem, solution=solution, additional_instruction="")
         print(response)
         print("---------------------")
         print(json.dumps(logs, indent=4))
@@ -128,7 +128,7 @@ Every morning Aya goes for a $9$-kilometer-long walk and stops at a coffee shop 
             
             feedback = 'The solution correctly sets up the equations for the walking times at the two given speeds, solves for the unknown speed \\(s\\) and coffee time \\(t\\), and then applies these values to find the total time when walking at \\(s+\\tfrac12\\). All algebraic steps are valid, the discriminant is computed correctly, and the final total time of 3 hours 24 minutes (204 minutes) matches the problem’s requirements. No errors were found.'
             
-            response, logs = await revise_op(problem=problem, solution=solution, feedback=feedback)
+            response, logs = await revise_op(problem=problem, solution=solution, feedback=feedback, additional_instruction="")
             print(response)
             print("---------------------")
             print(json.dumps(logs, indent=4))
@@ -145,7 +145,7 @@ Every morning Aya goes for a $9$-kilometer-long walk and stops at a coffee shop 
             "We set up equations for walking time at speeds s and s+2, subtract to find s, then compute t, and finally compute total time at speed s+½. The result is 3 hours 24 minutes, which equals 204 minutes."
         ]
         
-        response, logs = await debater_op(problem=problem, proposed_solutions=proposed_solutions)
+        response, logs = await debater_op(problem=problem, proposed_solutions=proposed_solutions, additional_instruction="")
         print(response)
         print("---------------------")
         print(json.dumps(logs, indent=4))
@@ -176,8 +176,8 @@ async def main():
     # await operator_test.test_programmer()
     # await operator_test.test_format()
     # await operator_test.test_review()
-    await operator_test.test_revise()
-    # await operator_test.test_debater()
+    # await operator_test.test_revise()
+    await operator_test.test_debater()
     # await operator_test.test_judge()
         
 if __name__ == '__main__':

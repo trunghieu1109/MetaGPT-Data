@@ -33,6 +33,8 @@ Given the question described as follows: {question}
 Several solutions have been generated to address the given question. They are as follows:
 {solutions}
 
+Addition Instruction: {additional_instruction}
+
 Carefully evaluate these solutions and identify the answer that appears most frequently across them. This consistency in answers is crucial for determining the most reliable solution.
 
 In the "thought" field, provide a detailed explanation of your thought process. In `sc_solution`, return the most consistent answer.
@@ -92,6 +94,7 @@ Given a problem and a thoughtful solution, your task is to using critical thinki
 
 problem: {problem}
 solution: {solution}
+Additional Instruction: {additional_instruction}
 
 If you are more than 95 percent confident that the final answer is incorrect, please return False and give a feedback for the error. Otherwise, please return True and give a explanation for the correctness.
 Even if the review_result is true, you can put it 'nothing here' in the feedback.
@@ -110,6 +113,7 @@ Given a problem and a thoughtful solution which is just reviewed as incorrect, y
 problem: {problem}
 solution: {solution}
 feedback: {feedback}
+Additional Instruction: {additional_instruction}
 
 Ensure your revised solution is clear and address the problem in feedback.
 The output must be in complete XML format, only includes `revised_solution` field. This must include </revised_solution> in the end:
@@ -125,6 +129,8 @@ Then return the synthesized final conclusion after debating and reasoning compar
 Problem: {problem}
 
 Proposed Solution from other debaters: {proposed_solutions}
+
+Additional Instruction: {additional_instruction}
 
 Ensure your solution is the most concise and clear, which is synthesized from the insights of proposed solutions.
 The output must be in complete XML format:

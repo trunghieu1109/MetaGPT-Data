@@ -1,6 +1,8 @@
 import json
 from examples.generate_sample_data.graph_based_scenario.constants import MAX_CUSTOM_OP, MAX_REVISE_OP, MAX_LOOP
 import random
+from collections import Counter
+
 class Node:
     def __init__(self, name, label=None):
         self.name = name
@@ -41,85 +43,6 @@ class Graph:
         edge = Edge(start, end, constraint)
         self.edges.append(edge)
         self.nodes[start].out_edges.add(edge)
-
-    # def find_paths(self, start, end, path=None, visited=None, curr_len = 0, num_cag = 0, num_agc = 0, max_lens = 25):
-    #     """Tìm tất cả các đường đi hợp lệ từ start đến end"""
-    #     if path is None:
-    #         path = [self.nodes[start].label]
-    #     if visited is None:
-    #         visited = set()
-
-    #     if start == end:
-                
-    #         yield path
-    #         return
-        
-    #     if curr_len > max_lens:
-    #         return
-
-    #     visited.add(start)
-    #     for edge in self.nodes[start].out_edges:
-    #         next_node = edge.end
-    #         node_label = self.nodes[next_node].label
-    #         is_valid = False
-            
-    #         oc = 0
-    #         count_loop = 0
-    #         count_custom = 0
-    #         count_ag = 0
-    #         for node in path:
-    #             if node == 'Start Loop':
-    #                 oc += 1
-    #             elif node == 'End Loop':
-    #                 oc -= 1
-    #                 if oc >= 0:
-    #                     count_loop += 1
-    #             elif node == 'Custom':
-    #                 count_custom += 1
-    #             elif node == 'AnswerGenerate':
-    #                 count_ag += 1
-                    
-    #             if oc < 0:
-    #                 return
-            
-    #         if count_loop > MAX_LOOP:
-    #             return
-            
-    #         if count_custom > MAX_CUSTOM_OP:
-    #             return
-            
-    #         if count_ag > MAX_ANSWER_GENERATE_OP:
-    #             return
-            
-    #         if node_label == 'End Loop':
-    #             for node in reversed(path):
-    #                 if node == 'Start Loop':
-    #                     is_valid = True
-    #                     break
-    #                 elif node == 'End Loop':
-    #                     break
-    #         elif node_label == 'Review':
-    #             if any(item in path for item in ['AnswerGenerate', 'Custom', 'ScEnsemble']):
-    #                 is_valid = True
-    #         elif node_label == 'Start Loop':
-    #             is_valid = True
-    #             for node in reversed(path):
-    #                 if node == 'Start Loop':
-    #                     is_valid = False
-    #                     break
-    #                 elif node == 'End Loop':
-    #                     is_valid = True
-    #                     break
-    #         else:
-    #             is_valid = True
-                    
-    #         if not is_valid:
-    #             continue
-                
-    #         # if next_node not in visited:
-    #         #     yield from self.find_paths(next_node, end, path + [self.nodes[next_node].label], visited.copy(), curr_len + int(node_label in operators_set), max_lens)
-
-    #         yield from self.find_paths(next_node, end, path + [self.nodes[next_node].label], visited.copy(), curr_len + int(node_label in operators_set), num_cag, num_agc, max_lens)
 
     def find_paths(self, start, end, path=None, visited=None, curr_len = 0, num_cag = 0, num_agc = 0, max_lens = 25):
         """Tìm tất cả các đường đi hợp lệ từ start đến end"""
@@ -279,24 +202,30 @@ class Graph:
 # max_lens = 0
 # count_format_mas = 0
 # formatted_paths = []
+# op_counts = []
 # for path in graph.find_paths("P", "Q", curr_len=0, num_cag = 0, num_agc = 0, max_lens = 16):
 #     if 'Format' in path:
 #         formatted_paths.append(" -> ".join(path))
 #     else:
 #         paths.append(" -> ".join(path))
-#     # count_op = 0
-#     # for p in path:
-#     #     if p in operators_set:
-#     #         count_op += 1
-#     # if max_lens < count_op:
-#     #     max_lens = count_op
-#     #     print(path)
-# formatted_paths = random.sample(formatted_paths, 2000)
+#     count_op = 0
+#     for p in path:
+#         if p in operators_set:
+#             count_op += 1
+#     op_counts.append(count_op)
+    
+
+# length_counts = Counter(op_counts)
+
+# for x in range(1, 21):
+#     print(f"Length {x}: {length_counts.get(x, 0)} paths")
+    
+# formatted_paths = random.sample(formatted_paths, 1000)
 # paths = paths + formatted_paths
 
 # print(len(paths))
 
-# for path in paths[:10]:
-#     print("--------------------------")
-#     print(path)
+# # for path in paths[:10]:
+# #     print("--------------------------")
+# #     print(path)
     

@@ -152,12 +152,12 @@ class ScEnsemble(Operator):
     def __init__(self, llm: LLM, name: str = "ScEnsemble"):
         super().__init__(llm, name)
 
-    async def __call__(self, solutions: List[str], problem: str):
+    async def __call__(self, solutions: List[str], problem: str, additional_instruction: str):
         solution_text = ""
         for index, solution in enumerate(solutions):
             solution_text += f"Solution from Expert {chr(65 + index)}: \n{str(solution)}\n\n\n"
 
-        prompt = SC_ENSEMBLE_PROMPT.format(question=problem, solutions=solution_text)
+        prompt = SC_ENSEMBLE_PROMPT.format(question=problem, solutions=solution_text, additional_instruction=additional_instruction)
         response, reasoning = await self._fill_node(ScEnsembleOp, prompt, mode="xml_fill")
         
         logs = {
@@ -457,8 +457,8 @@ class Review(Operator):
     def __init__(self, llm: LLM, name: str = "Review"):
         super().__init__(llm, name)
 
-    async def __call__(self, problem, solution, mode: str = None):
-        prompt = REVIEW_PROMPT.format(problem=problem, solution=solution)
+    async def __call__(self, problem, solution, additional_instruction, mode: str = None):
+        prompt = REVIEW_PROMPT.format(problem=problem, solution=solution, additional_instruction=additional_instruction)
         response, reasoning = await self._fill_node(ReviewOp, prompt, mode="xml_fill")
         
         logs = {
@@ -476,8 +476,8 @@ class Revise(Operator):
     def __init__(self, llm: LLM, name: str = "Revise"):
         super().__init__(llm, name)
 
-    async def __call__(self, problem, solution, feedback, mode: str = None):
-        prompt = REVISE_PROMPT.format(problem=problem, solution=solution, feedback=feedback)
+    async def __call__(self, problem, solution, feedback, additional_instruction, mode: str = None):
+        prompt = REVISE_PROMPT.format(problem=problem, solution=solution, feedback=feedback, additional_instruction=additional_instruction)
         response, reasoning = await self._fill_node(ReviseOp, prompt, mode="xml_fill")
         
         logs = {
@@ -537,8 +537,8 @@ class Debater(Operator):
     def __init__(self, llm: LLM, name: str = "Debater"):
         super().__init__(llm, name)
         
-    async def __call__(self, problem, proposed_solutions):
-        prompt = DEBATER_PROMPT.format(problem=problem, proposed_solutions=proposed_solutions)
+    async def __call__(self, problem, proposed_solutions, additional_instruction):
+        prompt = DEBATER_PROMPT.format(problem=problem, proposed_solutions=proposed_solutions, additional_instruction=additional_instruction)
         response, reasoning = await self._fill_node(DebaterOp, prompt, mode="xml_fill")
         
         logs = {

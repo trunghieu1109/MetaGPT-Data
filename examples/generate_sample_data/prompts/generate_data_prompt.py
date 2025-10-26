@@ -1,36 +1,41 @@
 TASK_DECOMPOSER_PROMPT = """
-You are a Task Decomposer Agent responsible for breaking down a complex problem into a structured sequence of smaller subtasks.
+You are a Task Decomposer Agent responsible for breaking down a complex problem into a structured sequence of smaller subtasks following a given scenario.
 
 Given:
 - A main task description: {task}
-- A predefined scenario (operator sequence) that dictates the logical order of execution: {scenario}
+- A predefined scenario (operator sequence) that dictates the logical order of execution: {scenario}. 
+Each operator in this scenario has a distinct role and performs a specific subtask.
 - A set of available operators with distinct roles and functions: {operators}
 
 Your goal:
-1. Decompose the main task into multiple **well-defined subtasks** (each handled by one or more operators).
+1. Decompose the main task into multiple **well-defined subtasks** (each handled by one operator in scenario).
 2. Ensure that the decomposition strictly follows the **given scenario order** — do not change the order of operators.
 3. For each subtask, clearly specify:
-   - `subtask_id`
+   - `subtask_id`: ie, `subtask_1`, `subtask_2`, etc.
    - `operator` (which agent/operator should handle it)
-   - `objective` (what it aims to achieve)
+   - `objective` (what it aims to achieve). This objective must be aligned to the using context, ie. in loop or if-else.
 4. The total number of subtasks should align with the number of operators in the scenario.
+5. For control flow nodes such as `Start`, `End`, `Start Loop`, `End Loop`, it is not necessary to decompose them into subtasks. Just add into the list as follow:
+- `Start`: {{'objective': 'Start the workflow'}}
+- `End`: {{'objective': 'End the workflow'}}
+- `Start Loop`: {{'objective': 'Start the loop', 'iteration': 3}}. If there is a debater, iteration = 4.
+- `End Loop`: {{'objective': 'End the loop'}}
 
 Guidelines:
-- Each subtask must be **concise**, **actionable**, and **independent** enough for its assigned operator to perform.
+- Each subtask must be ***detailed**, **actionable**, and **independent** enough for its assigned operator to perform.
 - Maintain **logical flow** between subtasks (data dependencies, reasoning continuity, etc.).
 - Avoid redundancy or vague steps.
 - The final decomposition should read like a **workflow plan** executable by the operator sequence.
 
-Return in JSON format:
-{{
-    'detailed_plan': [
-        {{
-            'subtask_id': 'subtask_<id>',
-            'objective': '<objective>',
-            'operator': '<operator>'
-        }}
-    ]
-}}
+Return in list of json objects as follow. For the control flow node, add it into the list as the predefined patterns without subtask_id and operator: 
+[
+  {{
+      'subtask_id': 'subtask_<id>',
+      'objective': '<objective>',
+      'operator': '<operator>'
+  }},
+  ....
+]
 """
 
 MAS_CODE_GENERATOR_PROMPT = """

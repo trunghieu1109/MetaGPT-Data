@@ -7,6 +7,7 @@ import random
 import pandas as pd
 from typing import Dict, List
 import asyncio
+import ast
 
 from metagpt.configs.models_config import ModelsConfig
 from metagpt.configs.llm_config import LLMConfig
@@ -193,6 +194,7 @@ class DataGenerator:
             
             with open(scenario_path, "w", encoding="utf-8") as file:
                 file.write(scenario)
+        scenario = "Start -> Custom -> Format -> End"
         print(scenario)
         
         # check plan     
@@ -203,13 +205,14 @@ class DataGenerator:
         else:        
             # generate the task decomposition in this scenario
             plan = await self._generate_plan(task, scenario)
+            plan = plan.strip("```")
+            plan = plan.strip("```json")
             
             directory = os.path.dirname(plan_path)
             os.makedirs(directory, exist_ok=True)
             
             with open(plan_path, "w", encoding="utf-8") as file:
                 json.dump(plan, file, ensure_ascii=False, indent=4)
-          
         # check mas  
         if os.path.exists(mas_path):
             with open(mas_path, "r", encoding="utf-8") as file:
@@ -218,7 +221,6 @@ class DataGenerator:
         else:
             # generate the corresponding mas
             mas = await self._generate_mas(scenario, plan)
-            
             # postprocess mas
             mas = COMPLETE_MAS_TEMPLATE.format(workflow_class=mas)
 
@@ -257,7 +259,8 @@ class DataGenerator:
             graph_class,
             {"dataset": self.dataset, "llm_config": self.exec_model_config},
             log_path,
-            eval_list=self.benchmark.get_lower_accuracy_data(), 
+            # eval_list=self.benchmark.get_lower_accuracy_data(), 
+            eval_list=None,
             is_test=False,
         )
         
@@ -277,17 +280,11 @@ class DataGenerator:
         
         print(f"Total scenarios: {scenario_list['total_paths']}")
         
-        for scn in self.scenario_list[:5]:
-            print("--------------------------------")
-            print(scn)
-        
-        exit()
         for idx, scenario in enumerate(self.scenario_list):
             if idx < self.start_scenario_idx or idx > self.end_scenario_idx:
                 continue
             # generate mas
             scenario_, plan, mas = await self._generate(idx)
-        
             # execute mas
             await self._execute(idx, mas)
 

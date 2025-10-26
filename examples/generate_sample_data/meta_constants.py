@@ -122,9 +122,13 @@ class Workflow:
             'solutions': {
                 'type': 'list[str]',
                 'desc': 'A list of candidate solutions or reasoning paths for the problem.'
+            },
+            'additional_instruction': {
+                'type': 'string',
+                'desc': 'Additional instructions or prompts for SC ensemble reasoning.'
             }
         },
-        'interface': 'self.sc_ensemble(solutions=[], problem="")',
+        'interface': 'self.sc_ensemble(solutions=[], problem="", additional_instruction="")',
         'output': {
             'thought': {
                 'type': 'string',
@@ -159,7 +163,7 @@ class Workflow:
             solutions = solutions + [step_x-1_answer]
     
         # Step x: .....
-        solution, logs = await self.sc_ensemble(problem=problem, solutions=solutions)
+        solution, logs = await self.sc_ensemble(problem=problem, solutions=solutions, additional_instruction=".....")
         invoking_logs.append(logs)
         
         step_x_thought = solution['thought']
@@ -299,9 +303,13 @@ class Workflow:
             'solution': {
                 'type': 'string',
                 'desc': 'The proposed solution or reasoning to review.'  
+            },
+            'additional_instruction': {
+                'type': 'string',
+                'desc': 'Optional contextual analysis or explanation of the problem to guide review.'
             }
         },
-        'interface': 'self.review(problem="", solution="")',
+        'interface': 'self.review(problem="", solution="", additional_instruction="")',
         'output': {
             'review_result': {
                 'type': 'boolean',
@@ -323,7 +331,7 @@ class Workflow:
 
     async def __call__(self, problem: str):    
         # Step x: .....
-        solution, logs = await self.review(problem=problem, solution=".....")
+        solution, logs = await self.review(problem=problem, solution=".....", additional_instruction=".......")
         invoking_logs.append(logs)
         
         step_x_review_result = solution['review_result']
@@ -344,9 +352,13 @@ class Workflow:
             'feedback':{
                 'type': 'string',
                 'desc': 'Reviewer or critic feedback indicating issues or improvements.'
+            },
+            'additional_instruction': {
+                'type': 'string',
+                'desc': 'Optional contextual analysis or explanation of the problem to guide revise.'
             }
         },
-        'interface': 'self.revise(problem="", solution="", feedback="")',
+        'interface': 'self.revise(problem="", solution="", feedback="", additional_instruction="")',
         'output': {
             'revised_solution': {
                 'type': 'string',
@@ -364,7 +376,7 @@ class Workflow:
 
     async def __call__(self, problem: str):    
         # Step x: .....
-        solution, logs = await self.revise(problem=problem, solution=".....", feedback="....")
+        solution, logs = await self.revise(problem=problem, solution=".....", feedback="....", additional_instruction="")
         invoking_logs.append(logs)
         
         step_x_revised_solution = solution['revised_solution']
@@ -390,9 +402,13 @@ class Workflow:
             'proposed_solutions': {
                 'type': 'list[str]',
                 'desc': 'The proposed solutions or arguments from other debaters.'
+            },
+            'additional_instruction': {
+                'type': 'string',
+                'desc': 'Optional contextual analysis or explanation of the problem to guide debate.'
             }
         },
-        'interface': 'self.debater(problem="", proposed_solutions=[])',
+        'interface': 'self.debater(problem="", proposed_solutions=[], additional_instruction="")',
         'output': {
             'feedback': {
                 'type': 'string',
@@ -420,7 +436,7 @@ class Workflow:
         for r in range(num_round):
             proposed_solution_round = []
             for i in range(num_debater):
-                solution, logs = await self.debater(problem=problem, proposed_solutions=proposed_solutions[r-1])
+                solution, logs = await self.debater(problem=problem, proposed_solutions=proposed_solutions[r-1], additional_instruction=".....")
                 invoking_logs.append(logs)
 
                 step_x_solution = solution['solution']
