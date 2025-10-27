@@ -62,6 +62,9 @@ Your goals:
 4. Correctly await async operators and propagate their outputs (e.g., `solution = await self.custom(input=..., instruction=...)`).
 5. Ensure all variable dependencies between subtasks are handled consistently (outputs from previous steps are used as inputs to later steps where appropriate).
 6. Return the final result in a clean, formatted structure (e.g., `solution['response']` or equivalent).
+7. Ensure that each operator receives **the complete amount of context required**.
+For example, **Debater** operators must be provided with the full context, including the *problem*, *proposed_solutions* (opinions from other debaters), and *additional_instruction* (if any).
+Similarly, for patterns involving **reflect** or **revise**, the operator must receive all relevant information such as the *problem*, the *solutions*, and the corresponding *feedback*.
 
 Code requirements:
 - The generated code must be syntactically correct and executable as a standalone Python module.

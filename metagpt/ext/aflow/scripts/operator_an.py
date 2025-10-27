@@ -25,7 +25,7 @@ class FormatOp(BaseModel):
 
 class ScEnsembleOp(BaseModel):
     thought: str = Field(default="", description="The thought of the most consistent solution.")
-    sc_solution: str = Field(default="", description="The most consistent solution.")
+    solution_letter: str = Field(default="", description="The letter of most consistent solution.")
 
 
 class ReflectionTestOp(BaseModel):
@@ -51,18 +51,4 @@ class ReviewOp(BaseModel):
 
 
 class ReviseOp(BaseModel):
-    revised_solution: str = Field(default="", description="Based on the feedback, revised solution for this problem")
-
-class DebaterOp(BaseModel):
-    feedback: str = Field(default="", description="Based on the proposed solutions and your thought, return the feedback for these proposed solutions")
-    solution: str = Field(default="", description="Based on the proposed solutions and your thought, return a new solution for this problem")
-
-class JudgeOp(BaseModel):
-    justification: str = Field(default="", description="The justification for your decision")
-    best_solution: str = Field(default="", description="The final decision after judging the proposed solutions")
-
-class GeneratePlanOp(BaseModel):
-    detailed_plan: str = Field(default="", description="The detailed plan generated in JSON format, exactly max_scenario_len steps")
-
-class GenerateMASOp(BaseModel):
-    mas_code: str = Field(default="", description="The executable Python code for this problem")
+    solution: str = Field(default="", description="Based on the feedback, revised solution for this problem")

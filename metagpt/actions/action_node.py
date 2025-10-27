@@ -124,6 +124,22 @@ change the nodes_output key's value to meet its comment and no need to add extra
 Follow format example's {prompt_schema} format, generate output and make sure it follows the format example.
 """
 
+def ensure_xml_closed(s: str) -> str:
+    """
+    Kiểm tra nếu chuỗi XML không kết thúc bằng thẻ đóng, 
+    thì tự động thêm thẻ đóng cho thẻ mở cuối cùng.
+    """
+    # Nếu đã có thẻ đóng ở cuối → giữ nguyên
+    if re.search(r"</[a-zA-Z_][\w\-]*>\s*$", s):
+        return s
+
+    # Tìm tất cả thẻ mở
+    open_tags = re.findall(r"<([a-zA-Z_][\w\-]*)[^>/]*>", s)
+    if not open_tags:
+        return s  # Không có thẻ mở nào
+
+    last_open_tag = open_tags[-1]
+    return s.rstrip() + f"\n</{last_open_tag}>"
 
 def dict_to_markdown(d, prefix=MARKDOWN_TITLE_PREFIX, kv_sep="\n", postfix="\n"):
     markdown_str = ""
@@ -561,6 +577,7 @@ class ActionNode:
 
         extracted_data: Dict[str, Any] = {}
         content, reasoning = await self.llm.aask(context, images=images)
+        content = ensure_xml_closed(content)
         
         for field_name in field_names:
             pattern = rf"<{field_name}>(.*?)</{field_name}>"
@@ -592,7 +609,6 @@ class ActionNode:
                             raise ValueError
                     except:
                         extracted_data[field_name] = {}  # 默认空字典
-
         return extracted_data, reasoning
 
     @exp_cache(serializer=ActionNodeSerializer())

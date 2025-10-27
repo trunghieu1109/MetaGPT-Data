@@ -24,9 +24,9 @@ async def create_benchmark(name: str, is_test: bool = False) -> BaseBenchmark:
         
     log_path = "logs"
     benchmark = BENCHMARK_MAPPING[name.lower()](name, file_path, log_path)
-    await benchmark.load_and_save_data()
-    # specific_sample = benchmark.get_lower_accuracy_data()
-    # await benchmark.get_specific_data(specific_sample)
+    # await benchmark.load_and_save_data()
+    specific_sample = benchmark.get_lower_accuracy_data()
+    await benchmark.get_specific_data(specific_sample)
     return benchmark
 
 async def main():

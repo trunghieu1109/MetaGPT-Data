@@ -393,7 +393,7 @@ class Workflow:
         'output': 'The final selected solution after majority voting aggregation.'
     },
     'Debater': {
-        'description': "An agent who argues for and against proposed solutions from other debaters to refine reasoning and reveal the most robust argument.",
+        'description': "An Agent whose role is to discuss and critique the solutions proposed by other team members, while also defending and expressing opinions about the question itself. Through this process, the Agent provides feedback and insights on possible directions for solving the problem.",
         'input': {
             'problem': {
                 'type': 'string',
@@ -405,7 +405,7 @@ class Workflow:
             },
             'additional_instruction': {
                 'type': 'string',
-                'desc': 'Optional contextual analysis or explanation of the problem to guide debate.'
+                'desc': 'Optional contextual analysis or explanation of the problem to guide debating process.'
             }
         },
         'interface': 'self.debater(problem="", proposed_solutions=[], additional_instruction="")',

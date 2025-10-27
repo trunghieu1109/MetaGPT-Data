@@ -4,47 +4,26 @@
 # @Desc    : prompts of operators
 
 ANSWER_GENERATION_PROMPT = """
-You are a problem solver. Your task is to directly answer the given question.
-
-Your question: {problem}
-
 Think step by step and solve the problem.
 1. In the "thought" field, explain your thinking process in detail.
 2. In the "answer" field, provide the final answer concisely and clearly. The answer should be a direct response to the question, without including explanations or reasoning.
+Your task: {input}
 """
 
 FORMAT_PROMPT = """
 For the question described as {problem_description},
 please extract a short and concise answer contains only one word/few words from the following solution: {solution}.
-Let's format the solution in the following format: {format}
-
 Make sure there are no additional comments or explanations in your response.
-
-The output must be in complete XML format:
-<solution>
-...
-</solution>
 """
 
 SC_ENSEMBLE_PROMPT = """
-You are an aggregator who aggregates answers from multiple experts. Your task is to identify the answer that appears most frequently across the provided answers.
-
 Given the question described as follows: {question}
 Several solutions have been generated to address the given question. They are as follows:
 {solutions}
 
-Addition Instruction: {additional_instruction}
-
 Carefully evaluate these solutions and identify the answer that appears most frequently across them. This consistency in answers is crucial for determining the most reliable solution.
 
-In the "thought" field, provide a detailed explanation of your thought process. In `sc_solution`, return the most consistent answer.
-The output must be in complete XML format:
-<thought>
-...
-</thought>
-<sc_solution>
-...
-</sc_solution>
+In the "thought" field, provide a detailed explanation of your thought process. In the "solution_letter" field, output only the single letter ID (A, B, C, etc.) corresponding to the most consistent solution. Do not include any additional text or explanation in the "solution_letter" field.
 """
 
 PYTHON_CODE_VERIFIER_PROMPT = """
@@ -61,6 +40,7 @@ Your code should:
 
 Please ensure your code is efficient, well-commented, and follows Python best practices. The output should be limited to basic data types such as strings, integers, and floats. It is prohibited to transmit images or other file formats. The code output is intended for a text-based language model.
 """
+
 
 REFLECTION_ON_PUBLIC_TEST_PROMPT = """
 Given a code problem and a python code solution which failed to pass test or execute, you need to analyze the reason for the failure and propose a better code solution.: 
@@ -94,75 +74,16 @@ Given a problem and a thoughtful solution, your task is to using critical thinki
 
 problem: {problem}
 solution: {solution}
-Additional Instruction: {additional_instruction}
 
 If you are more than 95 percent confident that the final answer is incorrect, please return False and give a feedback for the error. Otherwise, please return True and give a explanation for the correctness.
-Even if the review_result is true, you can put it 'nothing here' in the feedback.
-The output must be in complete XML format:
-<review_result>
-...
-</review_result>
-<feedback>
-...
-</feedback>
 """
 
 REVISE_PROMPT = """
-Given a problem and a thoughtful solution which is just reviewed as incorrect, your task is to revise the solution to solve the question.
+Given a problem and a thoughtful solution which is just reviewed as incorrect, your task is to revise the solution to solve the question and ensure the final code solution is wrapped with ```python```.
 
 problem: {problem}
 solution: {solution}
 feedback: {feedback}
-Additional Instruction: {additional_instruction}
 
-Ensure your revised solution is clear and address the problem in feedback.
-The output must be in complete XML format, only includes `revised_solution` field. This must include </revised_solution> in the end:
-<revised_solution>
-...
-</revised_solution>
-"""
-
-DEBATER_PROMPT = """
-Given a problem and many proposed solutions from other debaters for this problem, your task is to debate the solutions, extract the insights and find the weakness in these solutions. 
-Then return the synthesized final conclusion after debating and reasoning comparison.
-
-Problem: {problem}
-
-Proposed Solution from other debaters: {proposed_solutions}
-
-Additional Instruction: {additional_instruction}
-
-Ensure your solution is the most concise and clear, which is synthesized from the insights of proposed solutions.
-The output must be in complete XML format:
-<feedback>
-...
-</feedback>
-<solution>
-...
-</solution>
-"""
-
-JUDGE_PROMPT = """
-You are the JUDGE in a reasoning competition. Your task is to **evaluate multiple proposed solutions** for a given problem and determine which one is the most **accurate, logical, and well-reasoned**.
-
-Problem: {problem}
-
-Proposed Solutions: {solutions}
-
-For your judgment:
-1. Analyze the correctness, clarity, and completeness of each solution.
-2. Identify any logical gaps, false assumptions, or unnecessary complexity.
-3. Compare all solutions fairly and reason which one aligns best with sound mathematical or logical principles.
-4. Finally, provide:
-   - A brief justification of your decision.
-   - The index or content of the **best solution**.
-
-Your response should be objective, concise, and based solely on reasoning quality and factual correctness.
-The output must be in complete XML format:
-<justification>
-...
-</justification>
-<best_solution>
-...
-</best_solution>
+Ensure the output code is self-contained, and without any additional text or test cases.
 """

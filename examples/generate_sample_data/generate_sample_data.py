@@ -194,7 +194,7 @@ class DataGenerator:
             
             with open(scenario_path, "w", encoding="utf-8") as file:
                 file.write(scenario)
-        scenario = "Start -> Custom -> Format -> End"
+        # scenario = "Start -> Custom -> Format -> End"
         print(scenario)
         
         # check plan     
@@ -219,10 +219,22 @@ class DataGenerator:
                 mas = file.read()
                 
         else:
-            # generate the corresponding mas
-            mas = await self._generate_mas(scenario, plan)
-            # postprocess mas
-            mas = COMPLETE_MAS_TEMPLATE.format(workflow_class=mas)
+            is_valid = False
+            max_retries = 5
+            retries = 0
+            while not is_valid and retries < max_retries:
+                # generate the corresponding mas
+                mas = await self._generate_mas(scenario, plan)
+                # postprocess mas
+                mas = COMPLETE_MAS_TEMPLATE.format(workflow_class=mas)
+                
+                # validate mas
+                try:
+                    ast.parse(mas)
+                    is_valid = True
+                except SyntaxError as e:
+                    logger.info(f"Generated MAS has syntax error: {e}. Retrying... ({retries + 1}/{max_retries})")
+                    retries += 1
 
             directory = os.path.dirname(mas_path)
             os.makedirs(directory, exist_ok=True)
@@ -232,6 +244,21 @@ class DataGenerator:
             
         # return scenario, plan and mas
         return scenario, plan, mas
+    
+    async def _post_process_results(self, output_file, exec_code, new_data_path):
+        results = pd.read_csv(output_file, encoding="utf-8")
+        results['code'] = ""
+        for idx, row in results.iterrows():
+            results.at[idx, 'code'] = exec_code
+            if row['score'] > 0.3:
+                results.at[idx, 'score'] = 1
+            else:
+                results.at[idx, 'score'] = 0
+        
+        with open(new_data_path, "w", encoding="utf-8") as f:
+            for _, row in results.iterrows():
+                json_line = json.dumps(row.to_dict(), ensure_ascii=False)
+                f.write(json_line + "\n")
     
     async def _execute(self, scenario_idx, exec_code):
         # TODO: Execute generated mas, log all the information as much as possible
@@ -259,21 +286,13 @@ class DataGenerator:
             graph_class,
             {"dataset": self.dataset, "llm_config": self.exec_model_config},
             log_path,
-            # eval_list=self.benchmark.get_lower_accuracy_data(), 
-            eval_list=None,
+            eval_list=self.benchmark.get_lower_accuracy_data(), 
+            # eval_list=None,
             is_test=False,
         )
         
-        results = pd.read_csv(output_file, encoding="utf-8")
-        results['code'] = ""
-        for idx, row in results.iterrows():
-            results.at[idx, 'code'] = exec_code
+        await self._post_process_results(output_file, exec_code, new_data_path)
         
-        with open(new_data_path, "w", encoding="utf-8") as f:
-            for _, row in results.iterrows():
-                json_line = json.dumps(row.to_dict(), ensure_ascii=False)
-                f.write(json_line + "\n")
-    
     async def generate_sample_data(self):
         scenario_list = await self.generate_all_scenario()
         self.scenario_list = scenario_list['paths']

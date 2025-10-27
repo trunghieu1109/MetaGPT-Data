@@ -24,8 +24,6 @@ from metagpt.ext.aflow.scripts.operator_an import (
     ReviewOp,
     ReviseOp,
     ScEnsembleOp,
-    DebaterOp,
-    JudgeOp
 )
 from metagpt.ext.aflow.scripts.prompts.prompt import (
     ANSWER_GENERATION_PROMPT,
@@ -36,8 +34,6 @@ from metagpt.ext.aflow.scripts.prompts.prompt import (
     REVIEW_PROMPT,
     REVISE_PROMPT,
     SC_ENSEMBLE_PROMPT,
-    DEBATER_PROMPT,
-    JUDGE_PROMPT
 )
 from metagpt.ext.aflow.scripts.utils import (
     extract_test_cases_from_jsonl,
@@ -77,7 +73,8 @@ class Operator:
             except Exception as e:
                 logger.error(traceback.format_exc())
                 final_node = {"error": str(e)}
-                retries += 1                
+                retries += 1     
+                # sys.exit()
         return final_node, reasoning
     
     async def get_op_name(self):
@@ -106,8 +103,8 @@ class AnswerGenerate(Operator):
     def __init__(self, llm: LLM, name: str = "AnswerGenerate"):
         super().__init__(llm, name)
 
-    async def __call__(self, problem: str, mode: str = None) -> Tuple[str, str]:
-        prompt = ANSWER_GENERATION_PROMPT.format(problem=problem)
+    async def __call__(self, input: str, mode: str = None) -> Tuple[str, str]:
+        prompt = ANSWER_GENERATION_PROMPT.format(input=input)
         response, reasoning = await self._fill_node(AnswerGenerateOp, prompt, mode="xml_fill")
         
         logs = {
@@ -126,9 +123,9 @@ class CustomCodeGenerate(Operator):
         super().__init__(llm, name)
 
     async def __call__(self, problem, entry_point, instruction):
-        prompt = instruction + problem + f"\n\nEntry_point: {entry_point}"
+        prompt = instruction + problem
         
-        response, reasoning = await self._fill_node(CodeGenerateOp, prompt, mode="code_fill", function_name=entry_point)
+        response, reasoning = await self._fill_node(GenerateOp, prompt, mode="code_fill", function_name=entry_point)
         
         logs = {
             'prompt': prompt + f"\n\nEntry_point: {entry_point}",
@@ -152,12 +149,14 @@ class ScEnsemble(Operator):
     def __init__(self, llm: LLM, name: str = "ScEnsemble"):
         super().__init__(llm, name)
 
-    async def __call__(self, solutions: List[str], problem: str, additional_instruction: str):
+    async def __call__(self, solutions: List[str], problem: str):
+        answer_mapping = {}
         solution_text = ""
         for index, solution in enumerate(solutions):
-            solution_text += f"Solution from Expert {chr(65 + index)}: \n{str(solution)}\n\n\n"
+            answer_mapping[chr(65 + index)] = index
+            solution_text += f"{chr(65 + index)}: \n{str(solution)}\n\n\n"
 
-        prompt = SC_ENSEMBLE_PROMPT.format(question=problem, solutions=solution_text, additional_instruction=additional_instruction)
+        prompt = SC_ENSEMBLE_PROMPT.format(question=problem, solutions=solution_text)
         response, reasoning = await self._fill_node(ScEnsembleOp, prompt, mode="xml_fill")
         
         logs = {
@@ -167,8 +166,11 @@ class ScEnsemble(Operator):
             'output': response,
             'reasoning': reasoning
         }
+        
+        answer = response.get("solution_letter", "")
+        answer = answer.strip().upper()
 
-        return response, logs
+        return {"response": solutions[answer_mapping[answer]]}, logs
 
 
 def run_code(code):
@@ -374,7 +376,7 @@ class Test(Operator):
                     test_fail="executed unsucessfully",
                 )
                 response, reasoning = await self._fill_node(ReflectionTestOp, prompt, mode="code_fill")
-                solution  = response["reflection_and_solution"]
+                solution = response["reflection_and_solution"]
                 logs.append({
                     'prompt': prompt,
                     'role': self.name,
@@ -438,9 +440,9 @@ class Format(Operator):
     def __init__(self, llm: LLM, name: str = "Format"):
         super().__init__(llm, name)
 
-    async def __call__(self, problem, solution, format, mode: str = None):
-        prompt = FORMAT_PROMPT.format(problem_description=problem, solution=solution, format=format)
-        response, reasoning = await self._fill_node(FormatOp, prompt, mode="xml_fill")
+    async def __call__(self, problem, solution, mode: str = None):
+        prompt = FORMAT_PROMPT.format(problem_description=problem, solution=solution)
+        response, reasoning = await self._fill_node(FormatOp, prompt, mode)
         
         logs = {
             'prompt': prompt,
@@ -457,8 +459,8 @@ class Review(Operator):
     def __init__(self, llm: LLM, name: str = "Review"):
         super().__init__(llm, name)
 
-    async def __call__(self, problem, solution, additional_instruction, mode: str = None):
-        prompt = REVIEW_PROMPT.format(problem=problem, solution=solution, additional_instruction=additional_instruction)
+    async def __call__(self, problem, solution, mode: str = None):
+        prompt = REVIEW_PROMPT.format(problem=problem, solution=solution)
         response, reasoning = await self._fill_node(ReviewOp, prompt, mode="xml_fill")
         
         logs = {
@@ -476,8 +478,8 @@ class Revise(Operator):
     def __init__(self, llm: LLM, name: str = "Revise"):
         super().__init__(llm, name)
 
-    async def __call__(self, problem, solution, feedback, additional_instruction, mode: str = None):
-        prompt = REVISE_PROMPT.format(problem=problem, solution=solution, feedback=feedback, additional_instruction=additional_instruction)
+    async def __call__(self, problem, solution, feedback, mode: str = None):
+        prompt = REVISE_PROMPT.format(problem=problem, solution=solution, feedback=feedback)
         response, reasoning = await self._fill_node(ReviseOp, prompt, mode="xml_fill")
         
         logs = {
@@ -532,39 +534,3 @@ class MdEnsemble(Operator):
         most_frequent_index = Counter(all_responses).most_common(1)[0][0]
         final_answer = solutions[most_frequent_index]
         return {"solution": final_answer}
-
-class Debater(Operator):
-    def __init__(self, llm: LLM, name: str = "Debater"):
-        super().__init__(llm, name)
-        
-    async def __call__(self, problem, proposed_solutions, additional_instruction):
-        prompt = DEBATER_PROMPT.format(problem=problem, proposed_solutions=proposed_solutions, additional_instruction=additional_instruction)
-        response, reasoning = await self._fill_node(DebaterOp, prompt, mode="xml_fill")
-        
-        logs = {
-            'prompt': prompt,
-            'role': self.name,
-            'invoker_name': await self.get_op_name(),
-            'output': response,
-            'reasoning': reasoning
-        }
-        
-        return response, logs
-
-class Judge(Operator):
-    def __init__(self, llm: LLM, name: str = "Judge"):
-        super().__init__(llm, name)
-        
-    async def __call__(self, problem, solutions):
-        prompt = JUDGE_PROMPT.format(problem=problem, solutions=solutions)
-        response, reasoning = await self._fill_node(JudgeOp, prompt, mode="xml_fill")
-        
-        logs = {
-            'prompt': prompt,
-            'role': self.name,
-            'invoker_name': await self.get_op_name(),
-            'output': response,
-            'reasoning': reasoning
-        }
-
-        return response, logs
