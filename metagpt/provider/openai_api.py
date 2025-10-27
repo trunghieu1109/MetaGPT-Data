@@ -144,6 +144,7 @@ class OpenAILLM(BaseLLM):
             "temperature": self.config.temperature,
             "model": self.model,
             "timeout": 600,
+            "reasoning_effort": "low"
         }
         if "o1-" in self.model:
             # compatible to openai o1-series

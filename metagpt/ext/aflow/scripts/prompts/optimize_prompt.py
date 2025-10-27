@@ -49,10 +49,10 @@ invoking_logs.append(response['logs'])
 Then, in the end of the workflow, you need to return the `invoking_logs` variable as part of the output.
 
 Example for generated Prompt:
-XXX_PROMPT = '''
+XXX_<name> = '''
 <Prompt content>
 
-XXX_PROMPT_2 = '''
+XXX_<name_2> = '''
 <Prompt content 2>
 '''
 """
