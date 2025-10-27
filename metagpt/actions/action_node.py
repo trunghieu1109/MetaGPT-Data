@@ -454,7 +454,7 @@ class ActionNode:
         timeout=USE_CONFIG_TIMEOUT,
     ) -> (str, BaseModel):
         """Use ActionOutput to wrap the output of aask"""
-        content = await self.llm.aask(prompt, system_msgs, images=images, timeout=timeout)
+        content, reasoning = await self.llm.aask(prompt, system_msgs, images=images, timeout=timeout)
         logger.debug(f"llm raw output:\n{content}")
         output_class = self.create_model_class(output_class_name, output_data_mapping)
 
@@ -467,7 +467,7 @@ class ActionNode:
 
         logger.debug(f"parsed_data:\n{parsed_data}")
         instruct_content = output_class(**parsed_data)
-        return content, instruct_content
+        return content, instruct_content, reasoning
 
     def get(self, key):
         return self.instruct_content.model_dump()[key]
@@ -490,13 +490,14 @@ class ActionNode:
         if schema != "raw":
             mapping = self.get_mapping(mode, exclude=exclude)
             class_name = f"{self.key}_AN"
-            content, scontent = await self._aask_v1(
+            content, scontent, reasoning = await self._aask_v1(
                 prompt, class_name, mapping, images=images, schema=schema, timeout=timeout
             )
             self.content = content
             self.instruct_content = scontent
+            self.reasoning = reasoning
         else:
-            self.content = await self.llm.aask(prompt)
+            self.content, self.reasoning = await self.llm.aask(prompt)
             self.instruct_content = None
 
         return self
@@ -565,6 +566,9 @@ class ActionNode:
         field_name = self.get_field_name()
         prompt = context
         content, reasoning = await self.llm.aask(prompt, images=images)
+        if not content:
+            print("Warning: choice message content is empty. So we use reasoning_content instead.")
+            content = reasoning
         result = {field_name: content}
         return result, reasoning
 
@@ -716,7 +720,8 @@ class ActionNode:
             prompt_schema="json",
         )
 
-        content = await self.llm.aask(prompt)
+        content, reasoning = await self.llm.aask(prompt)
+        self.reasoning = reasoning
         # Extract the dict of mismatch key and its comment. Due to the mismatch keys are unknown, here use the keys
         # of ActionNode to judge if exist in `content` and then follow the `data_mapping` method to create model class.
         keys = self.keys()
@@ -817,9 +822,11 @@ class ActionNode:
         # step2, use `_aask_v1` to get revise structure result
         output_mapping = self.get_mapping(mode="auto", exclude=exclude_keys)
         output_class_name = f"{self.key}_AN_REVISE"
-        content, scontent = await self._aask_v1(
+        content, scontent, reasoning = await self._aask_v1(
             prompt=prompt, output_class_name=output_class_name, output_data_mapping=output_mapping, schema="json"
         )
+        
+        self.reasoning = reasoning
 
         # re-fill the ActionNode
         sc_dict = scontent.model_dump()

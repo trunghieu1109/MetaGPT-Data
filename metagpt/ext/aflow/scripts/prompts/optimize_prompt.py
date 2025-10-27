@@ -14,12 +14,33 @@ Considering information loss, complex graphs may yield better results, but insuf
 Beside the response, each opeartor also returns `logs` field, which contains the detailed execution logs of the operator. After each operator call, save this logs to `invoking_logs` variables.
 For example:
 
+** Correct example:
+
 ```
 response, logs = await self.<operator_name>(.......)
 invoking_logs.append(logs)
 ```
 
-Incorrect: 
+** Correct example:
+
+```
+response, logs = await self.<operator_name>(.......)
+invoking_logs.append(logs)
+```
+
+** Incorrect example: 
+```
+response = await self.<operator_name>(.......)
+invoking_logs.append(response['logs'])
+``` => This way is incorrect because the `response` variable may not contain the `logs` field if the operator fails during execution.
+
+** Incorrect example: 
+```
+response = await self.<operator_name>(.......)
+invoking_logs.append(response['logs'])
+``` => This way is incorrect because the `response` variable may not contain the `logs` field if the operator fails during execution.
+
+** Incorrect example: 
 ```
 response = await self.<operator_name>(.......)
 invoking_logs.append(response['logs'])
