@@ -10,7 +10,23 @@ representation.Ensure that all the prompts required by the current graph from pr
 Output the modified graph and all the necessary Prompts in prompt_custom (if needed).
 The prompt you need to generate is only the one used in `prompt_custom.XXX` within Custom. Other methods already have built-in prompts and are prohibited from being generated. Only generate those needed for use in `prompt_custom`; please remove any unused prompts in prompt_custom.
 the generated prompt must not contain any placeholders.
-Considering information loss, complex graphs may yield better results, but insufficient information transmission can omit the solution. It's crucial to include necessary context during the process."""
+Considering information loss, complex graphs may yield better results, but insufficient information transmission can omit the solution. It's crucial to include necessary context during the process.
+Beside the response, each opeartor also returns `logs` field, which contains the detailed execution logs of the operator. After each operator call, save this logs to `invoking_logs` variables.
+For example:
+
+```
+response, logs = await self.<operator_name>(.......)
+invoking_logs.append(logs)
+```
+
+Incorrect: 
+```
+response = await self.<operator_name>(.......)
+invoking_logs.append(response['logs'])
+``` => This way is incorrect because the `response` variable may not contain the `logs` field if the operator fails during execution.
+
+Then, in the end of the workflow, you need to return the `invoking_logs` variable as part of the output.
+"""
 
 
 WORKFLOW_INPUT = """

@@ -7,7 +7,7 @@ import argparse
 from typing import Dict, List
 
 from metagpt.configs.models_config import ModelsConfig
-from metagpt.ext.aflow.data.download_data import download
+# from metagpt.ext.aflow.data.download_data import download
 from metagpt.ext.aflow.scripts.optimizer import Optimizer
 
 
@@ -81,13 +81,13 @@ def parse_args():
     parser.add_argument(
         "--opt_model_name",
         type=str,
-        default="claude-3-5-sonnet-20240620",
+        default="openai/gpt-oss-20b",
         help="Specifies the name of the model used for optimization tasks.",
     )
     parser.add_argument(
         "--exec_model_name",
         type=str,
-        default="gpt-4o-mini",
+        default="openai/gpt-oss-20b",
         help="Specifies the name of the model used for execution tasks.",
     )
     return parser.parse_args()
@@ -113,7 +113,7 @@ if __name__ == "__main__":
             "Please add it to the configuration file or specify a valid model using the --exec_model_name flag. "
         )
 
-    download(["datasets", "initial_rounds"], if_first_download=args.if_first_optimize)
+    # download(["datasets", "initial_rounds"], if_first_download=args.if_first_optimize)
 
     optimizer = Optimizer(
         dataset=config.dataset,
