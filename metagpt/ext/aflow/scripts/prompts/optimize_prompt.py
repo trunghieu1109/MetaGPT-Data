@@ -26,6 +26,14 @@ invoking_logs.append(response['logs'])
 ``` => This way is incorrect because the `response` variable may not contain the `logs` field if the operator fails during execution.
 
 Then, in the end of the workflow, you need to return the `invoking_logs` variable as part of the output.
+
+Example for generated Prompt:
+XXX_PROMPT = '''
+<Prompt content>
+
+XXX_PROMPT_2 = '''
+<Prompt content 2>
+'''
 """
 
 
