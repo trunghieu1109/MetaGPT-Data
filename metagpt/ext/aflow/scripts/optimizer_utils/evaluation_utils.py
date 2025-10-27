@@ -11,13 +11,15 @@ class EvaluationUtils:
         evaluator = Evaluator(eval_path=directory)
 
         for i in range(validation_n):
-            score, avg_cost, total_cost = await evaluator.graph_evaluate(
+            score, _ = await evaluator.graph_evaluate(
                 optimizer.dataset,
                 optimizer.graph,
                 {"dataset": optimizer.dataset, "llm_config": optimizer.execute_llm_config},
                 directory,
                 is_test=False,
             )
+            
+            avg_cost, total_cost = 1, 1
 
             new_data = optimizer.data_utils.create_result_data(optimizer.round, score, avg_cost, total_cost)
             data.append(new_data)
@@ -32,13 +34,15 @@ class EvaluationUtils:
         sum_score = 0
 
         for i in range(validation_n):
-            score, avg_cost, total_cost = await evaluator.graph_evaluate(
+            score, _ = await evaluator.graph_evaluate(
                 optimizer.dataset,
                 optimizer.graph,
                 {"dataset": optimizer.dataset, "llm_config": optimizer.execute_llm_config},
                 directory,
                 is_test=False,
             )
+            
+            avg_cost, total_cost = 1, 1
 
             cur_round = optimizer.round + 1 if initial is False else optimizer.round
 
