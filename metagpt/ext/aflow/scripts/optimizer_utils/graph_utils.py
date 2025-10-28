@@ -2,14 +2,17 @@ import json
 import os
 import re
 import time
+import sys
 import traceback
 from typing import List
+import importlib.util
 
 from metagpt.ext.aflow.scripts.prompts.optimize_prompt import (
     WORKFLOW_CUSTOM_USE,
     WORKFLOW_INPUT,
     WORKFLOW_OPTIMIZE_PROMPT,
     WORKFLOW_TEMPLATE,
+    WORKFLOW_TEST_TEMPLATE
 )
 from metagpt.logs import logger
 
@@ -125,3 +128,40 @@ class GraphUtils:
 
         with open(os.path.join(directory, "__init__.py"), "w", encoding="utf-8") as file:
             file.write("")
+
+    async def check_graph_syntax(self, llm_config, directory: str, response: dict, round_number: int, dataset: str) -> bool:
+        
+        logger.info("Checking graph syntax...")
+        
+        graph_ = response["graph"].strip("```")
+        graph_ = response["graph"].strip("```python")
+        graph = WORKFLOW_TEST_TEMPLATE.format(graph=graph_, round=round_number, dataset=dataset)
+        
+        os.makedirs(os.path.join(directory, "test"), exist_ok=True)
+
+        with open(os.path.join(directory, "test", "graph.py"), "w", encoding="utf-8") as file:
+            file.write(graph)
+
+        with open(os.path.join(directory, "test", "prompt.py"), "w", encoding="utf-8") as file:
+            file.write(response["prompt"])
+
+        with open(os.path.join(directory, "test", "__init__.py"), "w", encoding="utf-8") as file:
+            file.write("")
+            
+        # sys.exit()
+        try:
+            path = os.path.join(directory, "test", "graph.py")
+            spec = importlib.util.spec_from_file_location("graph", path)
+            module = importlib.util.module_from_spec(spec)
+            spec.loader.exec_module(module)
+            
+            workflow = module.Workflow(name="TestWorkflow", llm_config=llm_config, dataset="DROP")
+
+            results = ""
+            logger.info("Executing test workflow to validate graph syntax...")
+            results = await workflow("test")
+            logger.info("Graph syntax is correct.")
+        except Exception as e:
+            logger.error(f"Graph syntax error: {e}")
+            return False
+        return True

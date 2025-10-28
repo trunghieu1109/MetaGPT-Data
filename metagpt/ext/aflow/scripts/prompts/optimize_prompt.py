@@ -2,7 +2,7 @@ WORKFLOW_OPTIMIZE_PROMPT = """You are building a Graph and corresponding Prompt 
 Referring to the given graph and prompt, which forms a basic example of a {type} solution approach, 
 please reconstruct and optimize them. You can add, modify, or delete nodes, parameters, or prompts. Include your 
 single modification in XML tags in your reply. Ensure they are complete and correct to avoid runtime failures. When 
-optimizing, you can incorporate critical thinking methods like review, revise, ensemble (generating multiple answers through different/similar prompts, then voting/integrating/checking the majority to obtain a final answer), selfAsk, etc. Consider 
+optimizing, you can incorporate critical thinking methods like review, revise, ensemble (generating multiple answers through different/similar prompts, then voting/integrating/checking the majority to obtain a final answer), etc. Consider 
 Python's loops (for, while, list comprehensions), conditional statements (if-elif-else, ternary operators), 
 or machine learning techniques (e.g., linear regression, decision trees, neural networks, clustering). The graph 
 complexity should not exceed 10. Use logical and control flow (IF-ELSE, loops) for a more enhanced graphical 
@@ -48,13 +48,19 @@ invoking_logs.append(response['logs'])
 
 Then, in the end of the workflow, you need to return the `invoking_logs` variable as part of the output.
 
-Example for generated Prompt:
-XXX_<name> = '''
-<Prompt content>
+----------------------------
+Example of a prompt to be generated in prompt_custom:
+XXX = '''
+<Your generated prompt here>
 
-XXX_<name_2> = '''
-<Prompt content 2>
+XXX_2 = '''
+<Your generated prompt here>
 '''
+
+XXX_3 = '''
+<Your generated prompt here>
+
+.......
 """
 
 
@@ -95,6 +101,18 @@ Note: In custom, the input and instruction are directly concatenated(instruction
 WORKFLOW_TEMPLATE = """from typing import Literal
 import metagpt.ext.aflow.scripts.optimized.{dataset}.workflows.template.operator as operator
 import metagpt.ext.aflow.scripts.optimized.{dataset}.workflows.round_{round}.prompt as prompt_custom
+from metagpt.provider.llm_provider_registry import create_llm_instance
+from metagpt.utils.cost_manager import CostManager
+
+DatasetType = Literal["HumanEval", "MBPP", "GSM8K", "MATH", "HotpotQA", "DROP"]
+
+{graph}
+"""
+
+
+WORKFLOW_TEST_TEMPLATE = """from typing import Literal
+import metagpt.ext.aflow.scripts.optimized.{dataset}.workflows.template.operator as operator
+import metagpt.ext.aflow.scripts.optimized.{dataset}.workflows.round_{round}.test.prompt as prompt_custom
 from metagpt.provider.llm_provider_registry import create_llm_instance
 from metagpt.utils.cost_manager import CostManager
 
