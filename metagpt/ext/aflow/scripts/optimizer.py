@@ -149,21 +149,18 @@ class Optimizer:
                 experience, sample["score"], graph[0], prompt, operator_description, self.type, log_data
             )
             
-            graph_optimize_node = await ActionNode.from_pydantic(GraphOptimize).fill(
-                context=graph_optimize_prompt, mode="xml_fill", llm=self.optimize_llm
-            )
-            
-            # print(graph_optimize_prompt)
-            
             max_gen_retries = 100
             gen_retries = 0
             check_graph = False
             
             while(gen_retries < max_gen_retries):
                 gen_retries += 1
+                
+                graph_optimize_node = await ActionNode.from_pydantic(GraphOptimize).fill(
+                    context=graph_optimize_prompt, mode="xml_fill", llm=self.optimize_llm
+                )
 
                 response = await self.graph_utils.get_graph_optimize_response(graph_optimize_node)
-
                 # Check if the modification meets the conditions
                 check = self.experience_utils.check_modification(
                     processed_experience, response["modification"], sample["round"]
@@ -172,9 +169,9 @@ class Optimizer:
                 check_graph = await self.graph_utils.check_graph_syntax(self.execute_llm_config, directory, response, self.round + 1, self.dataset)
                 if check_graph:
                     break
+            
+                # time.sleep(5)
             # If `check` is True, break the loop; otherwise, regenerate the graph
-            if not check_graph:
-                sys.exit()
             if check:
                 break
 
