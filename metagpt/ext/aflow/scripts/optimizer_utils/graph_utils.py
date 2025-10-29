@@ -6,6 +6,9 @@ import sys
 import traceback
 from typing import List
 import importlib.util
+import os
+import shutil
+import errno
 
 from metagpt.ext.aflow.scripts.prompts.optimize_prompt import (
     WORKFLOW_CUSTOM_USE,
@@ -136,7 +139,7 @@ class GraphUtils:
         graph_ = response["graph"].strip("```")
         graph_ = response["graph"].strip("```python")
         graph = WORKFLOW_TEST_TEMPLATE.format(graph=graph_, round=round_number, dataset=dataset)
-        
+    
         os.makedirs(os.path.join(directory, "test"), exist_ok=True)
 
         with open(os.path.join(directory, "test", "graph.py"), "w", encoding="utf-8") as file:
@@ -148,22 +151,46 @@ class GraphUtils:
         with open(os.path.join(directory, "test", "__init__.py"), "w", encoding="utf-8") as file:
             file.write("")
             
-        time.sleep(10)
+        def unload_previous_modules():
+            # Các tên module có thể tồn tại từ lần load trước
+            # print(sys.modules.keys())
+            candidates = [k for k in sys.modules.keys() if "test" in k and ("graph" in k or "prompt" in k)]
+            for name in candidates:
+                sys.modules.pop(name, None)
+                logger.info(f"Unloaded cached module: {name}")
+            
+        unload_previous_modules()
+            
+        is_countinue = input("Wait for 10 seconds to allow file system to sync. Continue? (y/n): ")
+        if is_countinue.lower() == 'n':
+            sys.exit()
+            
+        # time.sleep(10)
+        
+        def load_module_from_path(name: str, path: str):
+            spec = importlib.util.spec_from_file_location(name, path)
+            module = importlib.util.module_from_spec(spec)
+            sys.modules[name] = module
+            spec.loader.exec_module(module)
+            return module
             
         # sys.exit()
         try:
-            path = os.path.join(directory, "test", "graph")
-            path = path.replace("/", ".")
-            logger.info(f"Importing test workflow module to validate graph syntax... {path}")
-            if path in sys.modules:
-                logger.info(f"Reloading existing module {path}...")
-                del sys.modules[path]
-            module = importlib.import_module(path)
-            workflow = module.Workflow(name="TestWorkflow", llm_config=llm_config, dataset="DROP")
+            module_path = os.path.join(directory, "test", "graph.py")
+            module_name = "test_graph_dynamic"
+            
+            module_path_prompt = os.path.join(directory, "test", "prompt.py")
+            module_name_prompt = os.path.join(directory, "test").replace("/", ".") + ".prompt"
+            print("Module prompt name: ", module_name_prompt)
 
+            logger.info(f"Loading updated graph module from file: {module_path}")
+            module_prompt = load_module_from_path(module_name_prompt, module_path_prompt)
+            module = load_module_from_path(module_name, module_path)
+            workflow = module.Workflow(name="TestWorkflow", llm_config=llm_config, dataset="DROP")
+            
             results = ""
             logger.info("Executing test workflow to validate graph syntax...")
-            results = await workflow("test")
+            results = await workflow("Every morning Aya goes for a $9$-kilometer-long walk and stops at a coffee shop afterwards. When she walks at a constant speed of $s$ kilometers per hour, the walk takes her 4 hours, including $t$ minutes spent in the coffee shop. When she walks $s+2$ kilometers per hour, the walk takes her 2 hours and 24 minutes, including $t$ minutes spent in the coffee shop. Suppose Aya walks at $s+\frac{1}{2}$ kilometers per hour. Find the number of minutes the walk takes her, including the $t$ minutes spent in the coffee shop.")
             logger.info("Graph syntax is correct.")
         except Exception as e:
             logger.error(f"Graph syntax error: {e}")

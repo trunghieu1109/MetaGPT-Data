@@ -5,6 +5,7 @@
 
 import argparse
 from typing import Dict, List
+import sys
 
 from metagpt.configs.models_config import ModelsConfig
 # from metagpt.ext.aflow.data.download_data import download
@@ -100,6 +101,8 @@ if __name__ == "__main__":
 
     models_config = ModelsConfig.default()
     opt_llm_config = models_config.get(args.opt_model_name)
+    more_createive_llm_config = opt_llm_config.model_copy()
+    more_createive_llm_config.temperature = 0.5
     if opt_llm_config is None:
         raise ValueError(
             f"The optimization model '{args.opt_model_name}' was not found in the 'models' section of the configuration file. "
@@ -120,6 +123,7 @@ if __name__ == "__main__":
         question_type=config.question_type,
         opt_llm_config=opt_llm_config,
         exec_llm_config=exec_llm_config,
+        more_createive_llm_config=more_createive_llm_config,
         check_convergence=args.check_convergence,
         operators=config.operators,
         optimized_path=args.optimized_path,

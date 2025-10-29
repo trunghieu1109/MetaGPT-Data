@@ -12,7 +12,7 @@ from metagpt.ext.aflow.scripts.prompts.optimize_prompt import (
 import asyncio
 
 async def test():
-    directory = "/data/nguyentrunghieu/node-DeepResearch/MetaGPT-Data/metagpt/ext/aflow/scripts/optimized/DROP/workflows/round_2"
+    directory = "metagpt/ext/aflow/scripts/optimized/DROP/workflows/round_13/test"
 
     import argparse
     from typing import Dict, List

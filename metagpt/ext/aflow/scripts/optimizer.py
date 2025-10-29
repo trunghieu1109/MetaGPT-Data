@@ -7,6 +7,10 @@ import asyncio
 import time
 import sys
 from typing import List, Literal
+import ast
+import os
+import shutil
+import errno
 
 from pydantic import BaseModel, Field
 
@@ -29,6 +33,38 @@ class GraphOptimize(BaseModel):
     graph: str = Field(default="", description="graph")
     prompt: str = Field(default="", description="prompt")
 
+def remove_path_if_exists(path: str) -> bool:
+    """Xoá path nếu tồn tại (file, folder, symlink). Trả về True nếu đã xoá hoặc không tồn tại."""
+    try:
+        if not os.path.lexists(path):   # lexists: nhận diện cả symlink đứt
+            return True
+
+        # Nếu là symlink (dù trỏ tới file hay folder), chỉ cần unlink
+        if os.path.islink(path):
+            os.unlink(path)
+            return True
+
+        if os.path.isfile(path):
+            os.remove(path)
+            return True
+
+        if os.path.isdir(path):
+            shutil.rmtree(path)
+            return True
+
+        # Fallback: cố unlink (trường hợp đặc biệt)
+        os.unlink(path)
+        return True
+
+    except FileNotFoundError:
+        return True
+    except OSError as e:
+        # Không có quyền, đang bị lock, v.v.
+        if e.errno == errno.ENOENT:
+            return True
+        # Tuỳ bạn: print/log tại đây
+        # print(f"Không thể xoá {path}: {e}")
+        return False
 
 class Optimizer:
     def __init__(
@@ -37,6 +73,7 @@ class Optimizer:
         question_type: QuestionType,
         opt_llm_config,
         exec_llm_config,
+        more_createive_llm_config,
         operators: List,
         sample: int,
         check_convergence: bool = False,
@@ -48,6 +85,7 @@ class Optimizer:
         self.optimize_llm_config = opt_llm_config
         self.optimize_llm = create_llm_instance(self.optimize_llm_config)
         self.execute_llm_config = exec_llm_config
+        self.more_createive_llm = create_llm_instance(more_createive_llm_config)
 
         self.dataset = dataset
         self.type = question_type
@@ -156,9 +194,21 @@ class Optimizer:
             while(gen_retries < max_gen_retries):
                 gen_retries += 1
                 
-                graph_optimize_node = await ActionNode.from_pydantic(GraphOptimize).fill(
-                    context=graph_optimize_prompt, mode="xml_fill", llm=self.optimize_llm
-                )
+                is_removed = remove_path_if_exists(os.path.join(directory, "test"))
+                if is_removed:
+                    path = os.path.join(directory, "test")
+                    logger.info(f"Previous test directory removed successfully: {path}")
+                
+                if gen_retries >= 5:
+                    logger.info("Using more creative LLM for graph optimization due to multiple retries.")
+                    graph_optimize_node = await ActionNode.from_pydantic(GraphOptimize).fill(
+                        context=graph_optimize_prompt, mode="xml_fill", llm=self.more_createive_llm
+                    )
+                else:
+                    logger.info("Using standard LLM for graph optimization.")
+                    graph_optimize_node = await ActionNode.from_pydantic(GraphOptimize).fill(
+                        context=graph_optimize_prompt, mode="xml_fill", llm=self.optimize_llm
+                    )
 
                 response = await self.graph_utils.get_graph_optimize_response(graph_optimize_node)
                 # Check if the modification meets the conditions

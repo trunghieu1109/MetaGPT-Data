@@ -201,3 +201,4 @@ metagpt/ext/aflow/data
 config/config2.yaml
 examples/generate_sample_data/generated_data*/*
 metagpt/ext/aflow/scripts/save_data/
+metagpt/ext/aflow/scripts/attempt_*/
