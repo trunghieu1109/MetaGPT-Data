@@ -155,6 +155,9 @@ class GraphUtils:
             path = os.path.join(directory, "test", "graph")
             path = path.replace("/", ".")
             logger.info(f"Importing test workflow module to validate graph syntax... {path}")
+            if path in sys.modules:
+                logger.info(f"Reloading existing module {path}...")
+                del sys.modules[path]
             module = importlib.import_module(path)
             workflow = module.Workflow(name="TestWorkflow", llm_config=llm_config, dataset="DROP")
 
