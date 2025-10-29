@@ -155,7 +155,7 @@ class GraphUtils:
             path = os.path.join(directory, "test", "graph")
             path = path.replace("/", ".")
             logger.info(f"Importing test workflow module to validate graph syntax... {path}")
-            module = importlib.import_module("metagpt.ext.aflow.scripts.optimized.DROP.workflows.round_11.test.graph")
+            module = importlib.import_module(path)
             workflow = module.Workflow(name="TestWorkflow", llm_config=llm_config, dataset="DROP")
 
             results = ""
