@@ -149,7 +149,7 @@ class Optimizer:
                 experience, sample["score"], graph[0], prompt, operator_description, self.type, log_data
             )
             
-            max_gen_retries = 100
+            max_gen_retries = 200
             gen_retries = 0
             check_graph = False
             

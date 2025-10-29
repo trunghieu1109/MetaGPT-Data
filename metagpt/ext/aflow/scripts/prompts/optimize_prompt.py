@@ -10,6 +10,18 @@ representation.Ensure that all the prompts required by the current graph from pr
 Output the modified graph and all the necessary Prompts in prompt_custom (if needed).
 The prompt you need to generate is only the one used in `prompt_custom.XXX` within Custom. Other methods already have built-in prompts and are prohibited from being generated. Only generate those needed for use in `prompt_custom`; please remove any unused prompts in prompt_custom.
 the generated prompt must not contain any placeholders.
+
+Example: 
+
+<name of the variable, which must synchonize with the prompts used in Workflow> = '''
+<Fill your prompt here>
+'''
+
+<name of the variable, which must synchonize with the prompts used in Workflow> = '''
+<Fill your prompt here>
+'''
+....
+
 Considering information loss, complex graphs may yield better results, but insufficient information transmission can omit the solution. It's crucial to include necessary context during the process.
 Beside the response, each opeartor also returns `logs` field, which contains the detailed execution logs of the operator. After each operator call, save this logs to `invoking_logs` variables.
 For example:
@@ -47,22 +59,8 @@ invoking_logs.append(response['logs'])
 ``` => This way is incorrect because the `response` variable may not contain the `logs` field if the operator fails during execution.
 
 Then, in the end of the workflow, you need to return the `invoking_logs` variable as part of the output.
-
-----------------------------
-Example of a prompt to be generated in prompt_custom:
-XXX = '''
-<Your generated prompt here>
-
-XXX_2 = '''
-<Your generated prompt here>
-'''
-
-XXX_3 = '''
-<Your generated prompt here>
-
 .......
 """
-
 
 WORKFLOW_INPUT = """
 Here is a graph and the corresponding prompt (prompt only related to the custom method) that performed excellently in a previous iteration (maximum score is 1). You must make further optimizations and improvements based on this graph. The modified graph must differ from the provided example, and the specific differences should be noted within the <modification>xxx</modification> section.\n
@@ -100,7 +98,7 @@ Note: In custom, the input and instruction are directly concatenated(instruction
 
 WORKFLOW_TEMPLATE = """from typing import Literal
 import metagpt.ext.aflow.scripts.optimized.{dataset}.workflows.template.operator as operator
-import metagpt.ext.aflow.scripts.optimized.{dataset}.workflows.round_{round}.prompt as prompt_custom
+from metagpt.ext.aflow.scripts.optimized.{dataset}.workflows.round_{round} import prompt as prompt_custom
 from metagpt.provider.llm_provider_registry import create_llm_instance
 from metagpt.utils.cost_manager import CostManager
 
@@ -112,7 +110,7 @@ DatasetType = Literal["HumanEval", "MBPP", "GSM8K", "MATH", "HotpotQA", "DROP"]
 
 WORKFLOW_TEST_TEMPLATE = """from typing import Literal
 import metagpt.ext.aflow.scripts.optimized.{dataset}.workflows.template.operator as operator
-import metagpt.ext.aflow.scripts.optimized.{dataset}.workflows.round_{round}.test.prompt as prompt_custom
+from metagpt.ext.aflow.scripts.optimized.{dataset}.workflows.round_{round}.test import prompt as prompt_custom
 from metagpt.provider.llm_provider_registry import create_llm_instance
 from metagpt.utils.cost_manager import CostManager
 

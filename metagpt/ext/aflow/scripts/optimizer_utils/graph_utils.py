@@ -148,13 +148,14 @@ class GraphUtils:
         with open(os.path.join(directory, "test", "__init__.py"), "w", encoding="utf-8") as file:
             file.write("")
             
+        time.sleep(10)
+            
         # sys.exit()
         try:
-            path = os.path.join(directory, "test", "graph.py")
-            spec = importlib.util.spec_from_file_location("graph", path)
-            module = importlib.util.module_from_spec(spec)
-            spec.loader.exec_module(module)
-            
+            path = os.path.join(directory, "test", "graph")
+            path = path.replace("/", ".")
+            logger.info(f"Importing test workflow module to validate graph syntax... {path}")
+            module = importlib.import_module("metagpt.ext.aflow.scripts.optimized.DROP.workflows.round_11.test.graph")
             workflow = module.Workflow(name="TestWorkflow", llm_config=llm_config, dataset="DROP")
 
             results = ""
