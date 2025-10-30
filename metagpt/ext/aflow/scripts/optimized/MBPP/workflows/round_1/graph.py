@@ -23,7 +23,7 @@ class Workflow:
         self.llm = create_llm_instance(llm_config)
         self.custom = operator.Custom(self.llm)
 
-    async def __call__(self, problem: str):
+    async def __call__(self, problem: str, entry_point: str):
         """
         Implementation of the workflow
         """

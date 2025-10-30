@@ -23,6 +23,10 @@
         "description": "Reviews the solution's correctness and provide a review result in boolean format. Beside, return the feedback for error if the solution is incorrect.",
         "interface": "review(problem: str, solution: str) -> dict with keys 'review_result' and 'feedback' of type str"
     },
+    "Revise": {
+        "description": "Revise the solution to solve the question based on the feedback and ensure the final code solution is wrapped with ```python```",
+        "interface": "revise(problem: str, solution: str, feedback: str) -> dict with key 'solution' of type str"
+    },
     "Format": {
         "description": "Extract a short and concise answer contains only one word/few words from the solution",
         "interface": "format(problem: str, solution: str) -> dict with keys 'solution' of type str"

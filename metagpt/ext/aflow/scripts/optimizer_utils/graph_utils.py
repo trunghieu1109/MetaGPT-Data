@@ -161,9 +161,9 @@ class GraphUtils:
             
         unload_previous_modules()
             
-        is_countinue = input("Wait for 10 seconds to allow file system to sync. Continue? (y/n): ")
-        if is_countinue.lower() == 'n':
-            sys.exit()
+        # is_countinue = input("Wait for 10 seconds to allow file system to sync. Continue? (y/n): ")
+        # if is_countinue.lower() == 'n':
+        #     sys.exit()
             
         # time.sleep(10)
         

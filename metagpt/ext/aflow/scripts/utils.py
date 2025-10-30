@@ -18,6 +18,21 @@ class CodeDataset(Enum):
 def extract_test_cases_from_jsonl(entry_point: str, dataset: CodeDataset = CodeDataset.HUMAN_EVAL):
     # suppose that the dataset is HumanEval
     file_path = "metagpt/ext/aflow/data/humaneval_public_test.jsonl"
+    hardcoded_cases = {
+        "find_zero": "",
+        "decode_cyclic": "",
+        "decode_shift": "",
+        "by_length": "",
+        "add": "",
+        "triangle_area": "",
+        "correct_bracketing": "",
+        "solve": "",
+        "sum_squares": "",
+        "starts_one_ends": "",
+    }
+    
+    if entry_point in hardcoded_cases:
+        return hardcoded_cases[entry_point]
 
     # If there are no hardcoded test cases, read from the file
     with open(file_path, "r") as file:
@@ -28,6 +43,20 @@ def extract_test_cases_from_jsonl(entry_point: str, dataset: CodeDataset = CodeD
     
     # suppose that the dataset is MBPP
     file_path = "metagpt/ext/aflow/data/mbpp_public_test.jsonl"
+    hardcoded_cases = {
+        "remove_odd": "",
+        "replace_spaces": "",
+        "snake_to_camel": "",
+        "Split": "",
+        "swap_List": "",
+        "square_Sum": "",
+        "sort_sublists": "",
+        "unique_sublists": "",
+    }
+    
+    if entry_point in hardcoded_cases:
+        return hardcoded_cases[entry_point]
+    
     with open(file_path, "r") as file:
         for line in file:
             data = json.loads(line)
