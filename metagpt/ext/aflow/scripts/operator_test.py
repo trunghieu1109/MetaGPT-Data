@@ -46,13 +46,13 @@ from typing import List\n\n\ndef has_close_elements(numbers: List[float], thresh
         
         response, logs = await custom_code_generate_op(problem=problem, entry_point=entry_point, instruction=instruction)
         
-        print("Code: ", response['code'])
+        print("Code: ", response['response'])
         print("----------------------")
         print("Reasoning: ", logs['reasoning'])
         
         test_op = operator.Test(self.llm)
         
-        test_results, logs = await test_op(problem=problem, solution=response['code'], entry_point=entry_point)
+        test_results, logs = await test_op(problem=problem, solution=response['response'], entry_point=entry_point)
         print("Test result: ", test_results['result'])
         # print(test_results['solution'])
         
@@ -176,9 +176,9 @@ Every morning Aya goes for a $9$-kilometer-long walk and stops at a coffee shop 
         
 async def main():
     operator_test = OperatorTest()
-    await operator_test.test_custom()
+    # await operator_test.test_custom()
     # await operator_test.test_answer_generate()
-    # await operator_test.test_custom_code_generate()
+    await operator_test.test_custom_code_generate()
     # await operator_test.test_sc_ensemble()
     # await operator_test.test_programmer()
     # await operator_test.test_format()

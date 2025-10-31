@@ -314,7 +314,7 @@ class Test(Operator):
     def __init__(self, llm: LLM, name: str = "Test"):
         super().__init__(llm, name)
 
-    def exec_code(self, solution, entry_point):
+    def _run_tests_sync(self, solution, entry_point):
         test_cases = extract_test_cases_from_jsonl(entry_point)
         fail_cases = []
         for test_case in test_cases:
@@ -343,6 +343,27 @@ class Test(Operator):
             return fail_cases
         else:
             return "no error"
+        
+    # ---- Async wrapper to add timeout and subprocess isolation ----
+    async def exec_code(self, solution, entry_point, timeout: int = 30):
+        """
+        Run _run_tests_sync() asynchronously with timeout and isolation.
+        """
+        loop = asyncio.get_running_loop()
+        with concurrent.futures.ProcessPoolExecutor(max_workers=1) as executor:
+            try:
+                future = loop.run_in_executor(executor, self._run_tests_sync, solution, entry_point)
+                result = await asyncio.wait_for(future, timeout=timeout)
+                return result
+            except asyncio.TimeoutError:
+                executor.shutdown(wait=False, cancel_futures=True)
+                with open("tester.txt", "a") as f:
+                    f.write(f"[Timeout] {entry_point} timed out after {timeout}s\n")
+                return {"exec_fail_case": f"Timeout after {timeout}s"}
+            except Exception as e:
+                with open("tester.txt", "a") as f:
+                    f.write(f"[UnknownError] {entry_point}: {e}\n")
+                return {"exec_fail_case": f"Unknown error: {str(e)}"}
 
     async def __call__(self, problem, solution, entry_point, test_loop: int = 3):
         """
@@ -353,7 +374,7 @@ class Test(Operator):
         """
         logs = []
         for _ in range(test_loop):
-            result = self.exec_code(solution, entry_point)
+            result = await self.exec_code(solution, entry_point)
             if result == "no error":
                 logs.append({
                     'prompt': "No prompt",
@@ -409,7 +430,7 @@ class Test(Operator):
                     'reasoning': reasoning
                 })
 
-        result = self.exec_code(solution, entry_point)
+        result = await self.exec_code(solution, entry_point)
         if result == "no error":
             logs.append({
                 'prompt': "No prompt",
