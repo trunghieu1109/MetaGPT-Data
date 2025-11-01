@@ -314,7 +314,8 @@ class Test(Operator):
     def __init__(self, llm: LLM, name: str = "Test"):
         super().__init__(llm, name)
 
-    def _run_tests_sync(self, solution, entry_point):
+    @staticmethod
+    def _run_tests_sync(solution, entry_point):
         test_cases = extract_test_cases_from_jsonl(entry_point)
         fail_cases = []
         for test_case in test_cases:
@@ -352,7 +353,7 @@ class Test(Operator):
         loop = asyncio.get_running_loop()
         with concurrent.futures.ProcessPoolExecutor(max_workers=1) as executor:
             try:
-                future = loop.run_in_executor(executor, self._run_tests_sync, solution, entry_point)
+                future = loop.run_in_executor(executor, Test._run_tests_sync, solution, entry_point)
                 result = await asyncio.wait_for(future, timeout=timeout)
                 return result
             except asyncio.TimeoutError:
